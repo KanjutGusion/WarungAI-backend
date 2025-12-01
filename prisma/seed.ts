@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
 import * as bcrypt from 'bcrypt';
-import { EUserStatus, PrismaClient } from 'generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import minimist from 'minimist';
+import { EUserStatus, PrismaClient } from 'src/generated/prisma/client';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 

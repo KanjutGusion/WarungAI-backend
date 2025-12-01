@@ -20,7 +20,7 @@ import { JwtGuard } from './guards/jwt.guard';
     ]),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.test', '.env'],
+      envFilePath: ['.env', '.env.local'],
     }),
   ],
   providers: [

@@ -44,8 +44,8 @@ export class AuthController {
 
   @HttpCode(200)
   @Get('me')
-  async me(@Req() { auth }: ReqWithAuth) {
-    const data = await this.authService.me(auth.user.id);
+  async me(@Req() { user }: ReqWithAuth) {
+    const data = await this.authService.me(user.id);
 
     return this.responseService.success(data);
   }

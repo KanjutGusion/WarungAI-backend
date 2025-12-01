@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import z, { ZodError } from 'zod';
 import { Response } from 'express';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma } from 'src/generated/prisma/client';
 
 @Catch(ZodError, Prisma.PrismaClientKnownRequestError, HttpException)
 export class ErrorFilter implements ExceptionFilter {

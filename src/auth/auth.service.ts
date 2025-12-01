@@ -11,7 +11,7 @@ import { PrismaService } from 'src/_common/prisma/prisma.service';
 import { AuthLoginPayload, AuthRegisterPayload } from './zod';
 import { Response } from 'express';
 import { EUserRole } from 'src/types';
-import { User } from 'generated/prisma/client';
+import { User } from 'src/generated/prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -122,8 +122,8 @@ export class AuthService {
         email: user.email,
         status: user.status,
         user_role: {
-          role_id: user.user_role!.role_id,
-          role_name: user.user_role!.role.name,
+          id: user.user_role!.role_id,
+          name: user.user_role!.role.name,
         },
       },
     };

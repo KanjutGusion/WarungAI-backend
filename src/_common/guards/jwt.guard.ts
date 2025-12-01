@@ -3,7 +3,15 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from '../decorators/public.decorator';
 import { Roles } from '../decorators/roles.decorator';
+import { ReqWithAuth } from 'src/types';
 
+/**
+ * This guard handle the entire APP_GUARD
+ * the rule is simple, first, all the routes registered with in this app is private by default, except specity the decorator `@Public()`
+ * after that, if the route specify the roles, it'll check with user's jwt, but if not it will just let em go pass this guard
+ * @type {JwtGuard}
+ * @extends {AuthGuard('jwt')}
+ */
 @Injectable()
 export class JwtGuard extends AuthGuard('jwt') {
   constructor(private readonly reflector: Reflector) {
@@ -11,37 +19,86 @@ export class JwtGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (this._isPublicRoute(context)) {
+      return true;
+    }
+
+    if (!(await this._validateJwt(context))) {
+      return false;
+    }
+
+    return this._checkUserRole(context);
+  }
+
+  /**
+   * @notice Check if the route is marked as public
+   */
+  private _isPublicRoute(context: ExecutionContext): boolean {
     const isPublic = this.reflector.get(Public, context.getHandler());
-    if (!!isPublic) return true;
+    return !!isPublic;
+  }
 
-    const validJwt = await super.canActivate(context);
-    if (!validJwt) return false;
+  /**
+   * @notice Validate JWT token using passport strategy
+   */
+  private async _validateJwt(context: ExecutionContext): Promise<boolean> {
+    try {
+      const isValid = await super.canActivate(context);
+      return !!isValid;
+    } catch {
+      return false;
+    }
+  }
 
-    const requiredRoles: string[] = this.reflector.get(
-      Roles,
-      context.getHandler(),
-    );
+  /**
+   * @notice Check if user has required role to access the route
+   */
+  private _checkUserRole(context: ExecutionContext): boolean {
+    const requiredRoles = this._getRequiredRoles(context);
 
-    // Jika tidak ada roles yang di-require, skip pengecekan role
+    // If no roles required, allow access
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const auth = request.auth;
+    const user = this._getUserFromRequest(context);
 
-    if (!auth || !auth.roles) return false;
-
-    // Ambil schoolId dari header (jika ada)
-    const schoolId = request.headers['x-school-id'] as string;
-
-    // Jika ada schoolId, cek role untuk school tersebut
-    if (schoolId && auth.roles[schoolId]) {
-      const userRole = auth.roles[schoolId].name;
-      return requiredRoles.includes(userRole);
+    if (!this._isValidUser(user)) {
+      return false;
     }
 
-    const userRoles = Object.values(auth.roles);
-    return requiredRoles.some((role) => userRoles.includes(role));
+    return this._userHasRequiredRole(user.role.name, requiredRoles);
+  }
+
+  /**
+   * @notice Get required roles from route metadata
+   */
+  private _getRequiredRoles(context: ExecutionContext): string[] {
+    return this.reflector.get(Roles, context.getHandler()) || [];
+  }
+
+  /**
+   * @notice Extract user from request object
+   */
+  private _getUserFromRequest(context: ExecutionContext) {
+    const request: ReqWithAuth = context.switchToHttp().getRequest();
+    return request.user;
+  }
+
+  /**
+   * @notice Validate user object has necessary properties
+   */
+  private _isValidUser(user: any): boolean {
+    return !!(user && user.role && user.role.name);
+  }
+
+  /**
+   * @notice Check if user role is in required roles list
+   */
+  private _userHasRequiredRole(
+    userRole: string,
+    requiredRoles: string[],
+  ): boolean {
+    return requiredRoles.includes(userRole);
   }
 }
