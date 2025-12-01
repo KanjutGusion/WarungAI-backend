@@ -4,29 +4,32 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: warungai-api
-    restart: always
-    # map host HOST_PORT -> container 3000
+    image: warung-api:latest
+    container_name: warungai-api:latest
+    restart: unless-stopped
     ports:
-      - '${HOST_PORT:-3001}:3000'
+      - "${HOST_PORT:-3001}:3000"
     env_file:
       - .env
     environment:
-      - PORT=${HOST_PORT}
+      # This one should 3000 one and only, this image only export 3000
+      - HOST_PORT=3000
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - KOLOSAL_API_KEY=${KOLOSAL_API_KEY}
     networks:
       - warungnet
-    command: npm run start:prod
+    # Command sudah ada di Dockerfile CMD, tidak perlu override
+    # Kecuali mau run migrations dulu:
+    # command: sh -c "bunx prisma migrate deploy && bun run start:prod"
     healthcheck:
-      # health check uses container internal port 3000 (stable)
-      test:
-        [
-          'CMD-SHELL',
-          'curl -f http://localhost:${HOST_PORT}/api/health || exit 1',
-        ]
-      interval: 25s
+      # Health check pakai port internal container (3000)
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 20s
+      retries: 3
+      start_period: 40s
 
 networks:
   warungnet:
