@@ -1,49 +1,60 @@
-# Stage: development
-FROM node:20-alpine AS development
+# ---------------------------------------------------
+# Stage 1: Development
+# ---------------------------------------------------
+FROM oven/bun:1 AS development
 
-ARG DATABASE_URL
-
+ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+ENV DATABASE_URL=$DATABASE_URL
 ENV NODE_ENV=development
+
 WORKDIR /usr/src/app
 
-# Copy package manifest(s)
-COPY package*.json ./
+COPY package.json bun.lockb* ./
+RUN bun install
 
-# Use npm ci if lockfile exists, otherwise npm install
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
-
-# Copy source
 COPY . .
 
-# Generate Prisma client
-RUN DATABASE_URL=${DATABASE_URL} npx prisma generate
+# Generate Prisma Client ke custom path: src/generated/prisma
+RUN bunx prisma generate
 
-# Expose internal app port
 EXPOSE 3000
-
-# Default for development target (overridable in compose)
-CMD ["npm", "run", "start:dev"]
+CMD ["bun", "run", "start:dev"]
 
 # ---------------------------------------------------
-# Build stage
+# Stage 2: Build
+# ---------------------------------------------------
 FROM development AS build
-RUN npm run build
+
+# Build akan include generated prisma client
+RUN bun run build
 
 # ---------------------------------------------------
-# Production image
-FROM node:20-alpine AS production
+# Stage 3: Production
+# ---------------------------------------------------
+FROM oven/bun:1 AS production
 
+ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+ENV DATABASE_URL=$DATABASE_URL
 ENV NODE_ENV=production
+
 WORKDIR /usr/src/app
 
-# Copy package files and install only production deps
-COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
+# Install production dependencies
+COPY package.json bun.lockb* ./
+RUN bun install --production
 
-# Copy compiled dist
+# Copy prisma schema
+COPY prisma ./prisma
+
+# Copy source code yang berisi generated prisma
+# Karena output ada di src/generated/prisma
+COPY src ./src
+
+# Generate Prisma Client (akan generate ke src/generated/prisma)
+RUN bunx prisma generate
+
+# Copy build output (dist sudah include reference ke generated prisma)
 COPY --from=build /usr/src/app/dist ./dist
 
 EXPOSE 3000
-
-# production start
-CMD ["npm", "run", "start:prod"]
+CMD ["bun", "run", "start:prod"]

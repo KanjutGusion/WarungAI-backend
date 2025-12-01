@@ -71,6 +71,10 @@ async function seedSuperAdminUser() {
 }
 
 async function main() {
+  await prisma.userRole.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.role.deleteMany({});
+
   const args = minimist(process.argv.slice(2));
   // --all = semua, default juga semua jika tanpa argumen
   // --permission, --role, --plan, --module, --user
@@ -85,7 +89,6 @@ async function main() {
     );
   }
 }
-
 main()
   .catch((e) => {
     console.error('❌ Error during seeding:', e);

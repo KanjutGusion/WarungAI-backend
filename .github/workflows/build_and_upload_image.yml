@@ -1,0 +1,92 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main # Production deployment
+    tags:
+      - 'latest'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Tag: latest (for main branch)
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag: branch name
+            type=ref,event=branch
+            # Tag: semantic version (v1.2.3 → 1.2.3)
+            type=semver,pattern={{version}}
+            # Tag: semantic version (v1.2.3 → 1.2)
+            type=semver,pattern={{major}}.{{minor}}
+            # Tag: git short SHA
+            type=sha,prefix=sha-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' # Only deploy from main branch
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/raihan/backend
+
+            # Pull latest image
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose -f docker-compose.prod.yml pull
+
+            # Restart with new image
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
+
+            # Cleanup old images
+            docker image prune -af --filter "until=72h"
+
+            # Show logs
+            docker compose -f docker-compose.prod.yml logs --tail=50
