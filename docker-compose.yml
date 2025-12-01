@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: warungai-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # map host HOST_PORT -> container 3000
+    ports:
+      - '${HOST_PORT:-3001}:3000'
+    env_file:
+      - .env
+    environment:
+      # internal app port (fixed to container port)
+      - PORT=3000
+      # Database connection inside docker network (use service name)
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - warungnet
+    command: npm run start:prod
+    healthcheck:
+      # health check uses container internal port 3000 (stable)
+      test: ['CMD-SHELL', 'curl -f http://localhost:3000/api/health || exit 1']
+      interval: 25s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: warungai-postgres
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    # host mapping: POSTGRES_PORT on host -> 5432 in container
+    ports:
+      - '${POSTGRES_PORT:-5434}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - warungnet
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+networks:
+  warungnet:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
