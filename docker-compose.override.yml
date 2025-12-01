@@ -3,6 +3,8 @@ services:
   api:
     build:
       target: development
+      args:
+        - DATABASE_URL=${DATABASE_URL}
     container_name: warungai-api-dev
     command: npm run start:dev
     ports:
@@ -14,7 +16,6 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
     volumes:
       - .:/usr/src/app:delegated
-      - /usr/src/app/node_modules
     # disable healthcheck in dev for faster iteration
     healthcheck:
       disable: true

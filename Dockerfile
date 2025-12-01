@@ -1,6 +1,8 @@
 # Stage: development
 FROM node:20-alpine AS development
 
+ARG DATABASE_URL
+
 ENV NODE_ENV=development
 WORKDIR /usr/src/app
 
@@ -12,6 +14,9 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy source
 COPY . .
+
+# Generate Prisma client
+RUN DATABASE_URL=${DATABASE_URL} npx prisma generate
 
 # Expose internal app port
 EXPOSE 3000
