@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       target: production
     image: warung-api:latest
-    container_name: warungai-api:latest
+    container_name: warungai-api
     restart: unless-stopped
     ports:
       - "${HOST_PORT:-3001}:3000"

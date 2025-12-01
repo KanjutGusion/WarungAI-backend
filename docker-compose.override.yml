@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
-    image: warung-api:latest
+      target: development
+    image: warung-api:dev
     container_name: warungai-api
     restart: unless-stopped
     ports:
@@ -14,7 +14,7 @@ services:
     environment:
       # This one should 3000 one and only, this image only export 3000
       - HOST_PORT=3000
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - KOLOSAL_API_KEY=${KOLOSAL_API_KEY}
