@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,9 +13,19 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Accept', 'x-school-id'],
   });
 
-  app.setGlobalPrefix('v1');
+  const globalPrefix = 'api/v1';
+  app.setGlobalPrefix(globalPrefix);
 
   app.enableShutdownHooks();
-  await app.listen(app.get(ConfigService).get('SERVER_PORT') ?? 3000);
+
+  const configService = app.get(ConfigService);
+  const port = configService.get('SERVER_PORT') ?? 3000;
+  const logger = new Logger('bootstrap');
+
+  await app.listen(port, '0.0.0.0');
+
+  const appUrl = await app.getUrl();
+  logger.log(`App is running on: ${appUrl}/${globalPrefix}`);
+  logger.log(`API Documentation available at: ${appUrl}/api/docs`);
 }
 bootstrap();

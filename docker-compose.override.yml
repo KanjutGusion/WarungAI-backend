@@ -1,0 +1,21 @@
+# This file is loaded automatically by docker compose if present.
+services:
+  api:
+    build:
+      target: development
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+    container_name: warungai-api-dev
+    command: npm run start:dev
+    ports:
+      - '${HOST_PORT:-3001}:3000'
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+    volumes:
+      - .:/usr/src/app:delegated
+    # disable healthcheck in dev for faster iteration
+    healthcheck:
+      disable: true
