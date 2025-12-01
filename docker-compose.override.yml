@@ -1,21 +1,35 @@
-# This file is loaded automatically by docker compose if present.
 services:
   api:
     build:
+      context: .
+      dockerfile: Dockerfile
       target: development
-      args:
-        - DATABASE_URL=${DATABASE_URL}
-    container_name: warungai-api-dev
-    command: npm run start:dev
+    image: warung-api:dev
+    container_name: warungai-api
+    restart: unless-stopped
     ports:
-      - '${HOST_PORT:-3001}:3000'
+      - "${HOST_PORT:-3001}:3000"
     env_file:
       - .env
     environment:
-      - PORT=3000
-      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
-    volumes:
-      - .:/usr/src/app:delegated
-    # disable healthcheck in dev for faster iteration
+      # This one should 3000 one and only, this image only export 3000
+      - HOST_PORT=3000
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - KOLOSAL_API_KEY=${KOLOSAL_API_KEY}
+    networks:
+      - warungnet
+    # Command sudah ada di Dockerfile CMD, tidak perlu override
+    # Kecuali mau run migrations dulu:
+    # command: sh -c "bunx prisma migrate deploy && bun run start:prod"
     healthcheck:
-      disable: true
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  warungnet:
+    driver: bridge
