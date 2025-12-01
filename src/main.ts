@@ -12,7 +12,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Accept', 'x-school-id'],
   });
 
-  app.setGlobalPrefix('v1/api');
+  app.setGlobalPrefix('api/v1');
 
   app.enableShutdownHooks();
   await app.listen(
