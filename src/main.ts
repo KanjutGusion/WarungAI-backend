@@ -12,9 +12,12 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Accept', 'x-school-id'],
   });
 
-  app.setGlobalPrefix('v1');
+  app.setGlobalPrefix('v1/api');
 
   app.enableShutdownHooks();
-  await app.listen(app.get(ConfigService).get('SERVER_PORT') ?? 3000);
+  await app.listen(
+    app.get(ConfigService).get('SERVER_PORT') ?? 3000,
+    '0.0.0.0',
+  );
 }
 bootstrap();
