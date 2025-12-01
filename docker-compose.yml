@@ -1,9 +1,5 @@
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
     image: ghcr.io/kanjutgusion/warungai-backend:latest
     container_name: warungai-api
     restart: unless-stopped
