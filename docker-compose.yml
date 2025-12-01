@@ -16,11 +16,8 @@ services:
       - KOLOSAL_API_KEY=${KOLOSAL_API_KEY}
     networks:
       - warungnet
-    # Command sudah ada di Dockerfile CMD, tidak perlu override
-    # Kecuali mau run migrations dulu:
-    # command: sh -c "bunx prisma migrate deploy && bun run start:prod"
+    command: sh -c "bunx prisma db push && bun run start"
     healthcheck:
-      # Health check pakai port internal container (3000)
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
