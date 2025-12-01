@@ -79,14 +79,14 @@ jobs:
             cd /home/raihan/backend
 
             # Pull latest image
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose -f docker-compose.yml pull
+            echo "${{ secrets.GHCR_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            sudo docker compose -f docker-compose.yml pull
 
             # Restart with new image
-            docker compose -f docker-compose.yml up -d --force-recreate
+            sudo docker compose -f docker-compose.yml up -d --force-recreate
 
             # Cleanup old images
-            docker image prune -af --filter "until=72h"
+            sudo docker image prune -af --filter "until=72h"
 
             # Show logs
-            docker compose -f docker-compose.yml logs --tail=50
+            sudo docker compose -f docker-compose.yml logs --tail=50
