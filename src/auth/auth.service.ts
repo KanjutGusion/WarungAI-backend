@@ -8,8 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 
 import { PrismaService } from 'src/_common/prisma/prisma.service';
-import { ValidationService } from 'src/_common/validation/validation.service';
-import { AuthLoginPayload, AuthRegisterPayload, UsersValidation } from './zod';
+import { AuthLoginPayload, AuthRegisterPayload } from './zod';
 import { Response } from 'express';
 import { EUserRole } from 'src/types';
 import { User } from 'generated/prisma/client';
@@ -21,35 +20,26 @@ export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly validationService: ValidationService,
   ) {}
 
   async register(data: AuthRegisterPayload) {
-    const registerUser = this.validationService.validate(
-      UsersValidation.RESGISTER,
-      data,
-    );
-
     const result = await this.prismaService.$transaction(async (tx) => {
       const isUserExist = await tx.user.findFirst({
         where: {
-          email: registerUser.email,
+          email: data.email,
         },
       });
 
       if (isUserExist) throw new ForbiddenException('User already exist');
 
-      registerUser.password = await bcrypt.hash(
-        registerUser.password as string,
-        10,
-      );
+      data.password = await bcrypt.hash(data.password as string, 10);
 
-      this.logger.log(`Register User: ${registerUser.email}`);
+      this.logger.log(`Register User: ${data.email}`);
 
       const user = await tx.user.create({
         data: {
-          email: registerUser.email,
-          password: registerUser.password as string,
+          email: data.email,
+          password: data.password as string,
           user_role: {
             create: {
               role: {
@@ -89,14 +79,9 @@ export class AuthService {
   }
 
   async login(data: AuthLoginPayload) {
-    const loginUser = this.validationService.validate(
-      UsersValidation.LOGIN,
-      data,
-    );
-
     const user = await this.prismaService.user.findFirst({
       where: {
-        email: loginUser.email,
+        email: data.email,
       },
       select: {
         id: true,
@@ -116,7 +101,7 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Username or password wrong');
 
     const isMatch = await bcrypt.compare(
-      loginUser.password as string,
+      data.password as string,
       user.password,
     );
 

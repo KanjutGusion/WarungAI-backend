@@ -3,8 +3,13 @@ import { Body, Controller, Get, HttpCode, Post, Req } from '@nestjs/common';
 import { ResponseService } from 'src/_common/response/response.service';
 import { Public } from 'src/_common/decorators/public.decorator';
 import { AuthService } from './auth.service';
-import type { AuthLoginPayload, AuthRegisterPayload } from './zod';
+import {
+  UsersValidation,
+  type AuthLoginPayload,
+  type AuthRegisterPayload,
+} from './zod';
 import type { ReqWithAuth } from 'src/types';
+import { ZodValidationPipeFactory } from 'src/_common/pipes/zod-validation-factory.pipe';
 
 @Controller('auth')
 export class AuthController {
@@ -16,7 +21,10 @@ export class AuthController {
   @HttpCode(200)
   @Public()
   @Post('register')
-  async register(@Body() registerReq: AuthRegisterPayload) {
+  async register(
+    @Body(ZodValidationPipeFactory(UsersValidation.RESGISTER))
+    registerReq: AuthRegisterPayload,
+  ) {
     const data = await this.authService.register(registerReq);
 
     return this.responseService.success(data);
@@ -25,7 +33,10 @@ export class AuthController {
   @HttpCode(200)
   @Public()
   @Post('login')
-  async login(@Body() loginReq: AuthLoginPayload) {
+  async login(
+    @Body(ZodValidationPipeFactory(UsersValidation.LOGIN))
+    loginReq: AuthLoginPayload,
+  ) {
     const data = await this.authService.login(loginReq);
 
     return this.responseService.success(data);
