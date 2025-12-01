@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main # Production deployment
+      - development # Production deployment
     tags:
       - 'latest'
 
