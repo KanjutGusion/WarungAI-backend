@@ -56,6 +56,8 @@ COPY prisma ./prisma
 # Karena output ada di src/generated/prisma
 COPY src ./src
 
+COPY prisma.config.ts ./
+
 # Generate Prisma Client (akan generate ke src/generated/prisma)
 RUN bunx prisma generate
 
