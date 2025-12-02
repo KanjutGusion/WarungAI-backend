@@ -59,9 +59,9 @@ model Role {
   @@map("roles")
 }
 
-/*
-  OCR / Nota models
-*/
+/**
+ * OCR / Nota models
+ */
 model Session {
   id        String   @id @default(uuid())
   source    String?
@@ -81,8 +81,8 @@ model Item {
   name           String
   normalizedName String?
   qty            Int      @default(1)
-  unitPrice      Decimal  
-  subtotal       Decimal  
+  unitPrice      Decimal
+  subtotal       Decimal
   createdAt      DateTime @default(now())
 
   @@index([sessionId])
@@ -93,8 +93,8 @@ model Sale {
   id          String   @id @default(uuid())
   sessionId   String   @unique
   session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  totalAmount Decimal  
-  profit      Decimal  
+  totalAmount Decimal
+  profit      Decimal
   currency    String   @default("idr")
   createdAt   DateTime @default(now())
 
