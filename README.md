@@ -63,7 +63,7 @@ We use Docker to make running this app effortless.
     ```
 
 4.  **Access the App**
-    - API Health Check: `http://localhost:3001/health`
+    - API Health Check: `http://localhost:3001/api/v1/health`
     - Swagger Documentation: `http://localhost:3001/api/docs`
 
 ---
