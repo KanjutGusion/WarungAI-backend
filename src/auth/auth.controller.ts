@@ -1,52 +1,60 @@
 import { Body, Controller, Get, HttpCode, Post, Req } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
-import { ResponseService } from 'src/_common/response/response.service';
 import { Public } from 'src/_common/decorators/public.decorator';
 import { AuthService } from './auth.service';
-import {
-  UsersValidation,
-  type AuthLoginPayload,
-  type AuthRegisterPayload,
-} from './zod';
 import type { ReqWithAuth } from 'src/types';
-import { ZodValidationPipeFactory } from 'src/_common/pipes/zod-validation-factory.pipe';
+import { AuthLoginDto } from 'src/_common/dto/auth/auth-login.dto';
+import { AuthResponseDto } from 'src/_common/dto/auth/auth-response.dto';
+import { CreateUserDto } from 'src/_common/dto/auth/create-user.dto';
+import { UserResponseDto } from 'src/_common/dto/auth/user-response.dto';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly responseService: ResponseService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @HttpCode(200)
   @Public()
   @Post('register')
-  async register(
-    @Body(ZodValidationPipeFactory(UsersValidation.RESGISTER))
-    registerReq: AuthRegisterPayload,
-  ) {
-    const data = await this.authService.register(registerReq);
-
-    return this.responseService.success(data);
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully registered',
+    type: AuthResponseDto,
+  })
+  async register(@Body() registerReq: CreateUserDto): Promise<AuthResponseDto> {
+    return this.authService.register(registerReq);
   }
 
   @HttpCode(200)
   @Public()
   @Post('login')
-  async login(
-    @Body(ZodValidationPipeFactory(UsersValidation.LOGIN))
-    loginReq: AuthLoginPayload,
-  ) {
-    const data = await this.authService.login(loginReq);
-
-    return this.responseService.success(data);
+  @ApiOperation({ summary: 'Log in an existing user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully logged in',
+    type: AuthResponseDto,
+  })
+  async login(@Body() loginReq: AuthLoginDto): Promise<AuthResponseDto> {
+    return this.authService.login(loginReq);
   }
 
   @HttpCode(200)
   @Get('me')
-  async me(@Req() { user }: ReqWithAuth) {
-    const data = await this.authService.me(user.id);
-
-    return this.responseService.success(data);
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile successfully retrieved',
+    type: UserResponseDto,
+  })
+  async me(@Req() { user }: ReqWithAuth): Promise<UserResponseDto> {
+    return this.authService.me(user.id);
   }
 }

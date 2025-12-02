@@ -4,7 +4,6 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 
 import { PrismaService } from './prisma/prisma.service';
-import { ValidationService } from './validation/validation.service';
 import { ResponseService } from './response/response.service';
 import { ErrorFilter } from './error/error.filter';
 import { JwtGuard } from './guards/jwt.guard';
@@ -24,7 +23,6 @@ import { JwtGuard } from './guards/jwt.guard';
     }),
   ],
   providers: [
-    ValidationService,
     ResponseService,
     PrismaService,
     {
@@ -40,6 +38,6 @@ import { JwtGuard } from './guards/jwt.guard';
       useClass: ErrorFilter,
     },
   ],
-  exports: [ValidationService, ResponseService, PrismaService],
+  exports: [ResponseService, PrismaService],
 })
 export class CommonModule {}

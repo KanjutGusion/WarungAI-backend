@@ -37,7 +37,7 @@ async function seedRoles() {
 async function seedSuperAdminUser() {
   console.log('👤 Creating default super admin user...');
   const superAdminUser = await prisma.user.upsert({
-    where: { phone: 'root@root.root' },
+    where: { email: 'root@root.root' },
     update: {},
     create: {
       email: 'root@root.root',
@@ -83,7 +83,7 @@ async function main() {
   if (runAll || args.user) await seedSuperAdminUser();
   console.log('✅ Database seeding completed!');
   if (runAll || args.user) {
-    console.log('📧 Default admin phone: admin@letsschool.com');
+    console.log('📧 Default admin email: root@root.root');
     console.log(
       '🔑 Default admin password: password (change this in production!)',
     );
