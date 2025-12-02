@@ -58,3 +58,46 @@ model Role {
 
   @@map("roles")
 }
+
+/*
+  OCR / Nota models
+*/
+model Session {
+  id        String   @id @default(uuid())
+  source    String?
+  rawText   String
+  parsed    Json?
+  items     Item[]
+  sale      Sale?
+  createdAt DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model Item {
+  id             String   @id @default(uuid())
+  sessionId      String
+  session        Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  name           String
+  normalizedName String?
+  qty            Int      @default(1)
+  unitPrice      Decimal  
+  subtotal       Decimal  
+  createdAt      DateTime @default(now())
+
+  @@index([sessionId])
+  @@map("items")
+}
+
+model Sale {
+  id          String   @id @default(uuid())
+  sessionId   String   @unique
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  totalAmount Decimal  
+  profit      Decimal  
+  currency    String   @default("idr")
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("sales")
+}
