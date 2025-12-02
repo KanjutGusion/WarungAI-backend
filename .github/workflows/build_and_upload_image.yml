@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - development
+      - main
     tags:
       - 'latest'
 
@@ -58,7 +58,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/development'
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Deploy to VPS
