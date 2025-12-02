@@ -11,6 +11,8 @@ import FormData from 'form-data';
 import { NotaService } from 'src/nota/nota.service';
 import { PrismaService } from 'src/_common/prisma/prisma.service';
 import { OcrProcessResponseDto } from 'src/_common/dto/ocr/ocr-process-response.dto';
+import { Prisma } from 'src/generated/prisma/client';
+import axios, { AxiosResponse } from 'axios';
 
 @Injectable()
 export class OcrService {
@@ -39,7 +41,7 @@ export class OcrService {
     form.append('image', file.buffer, file.originalname);
 
     try {
-      const response = await firstValueFrom(
+      const response: AxiosResponse = await firstValueFrom(
         this.httpService.post(this.kolosalApiUrl, form, {
           headers: {
             ...form.getHeaders(),
@@ -51,10 +53,14 @@ export class OcrService {
       const parsedNota = this.notaService.parse(response.data);
       const profit = parsedNota.total * 0.2; // Assume 20% profit margin
 
-      const session = await this.prismaService.session.create({
+      const session: Prisma.SessionGetPayload<{
+        include: { items: true; sale: true };
+      }> = await this.prismaService.session.create({
         data: {
           rawText: parsedNota.rawText,
-          parsed: parsedNota.items as any,
+          parsed: JSON.parse(
+            JSON.stringify(parsedNota.items),
+          ) as Prisma.JsonArray,
           items: {
             create: parsedNota.items.map((item) => ({
               name: item.name,
@@ -87,10 +93,16 @@ export class OcrService {
         summary: {},
       };
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to process OCR request.',
-        error.response?.data,
-      );
+      if (axios.isAxiosError(error)) {
+        const description = error.response?.data
+          ? JSON.stringify(error.response.data)
+          : 'No additional error data provided.';
+        throw new InternalServerErrorException(
+          'Failed to process OCR request.',
+          description,
+        );
+      }
+      throw new InternalServerErrorException('Failed to process OCR request.');
     }
   }
 }

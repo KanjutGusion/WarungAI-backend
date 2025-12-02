@@ -88,8 +88,17 @@ export class JwtGuard extends AuthGuard('jwt') {
   /**
    * @notice Validate user object has necessary properties
    */
-  private _isValidUser(user: any): boolean {
-    return !!(user && user.role && user.role.name);
+  private _isValidUser(
+    user: unknown,
+  ): user is { id: string; role: { id: string; name: string } } {
+    return (
+      user != null &&
+      typeof user === 'object' &&
+      'role' in user &&
+      (user as { role: unknown }).role != null &&
+      typeof (user as { role: unknown }).role === 'object' &&
+      'name' in (user as { role: object }).role
+    );
   }
 
   /**

@@ -8,11 +8,11 @@ import {
 import { Response } from 'express';
 import { Prisma } from 'src/generated/prisma/client';
 
-@Catch(Prisma.PrismaClientKnownRequestError, HttpException)
+@Catch()
 export class ErrorFilter implements ExceptionFilter {
   private logger = new Logger(ErrorFilter.name);
 
-  catch(exception: any, host: ArgumentsHost) {
+  catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>();
 
     switch (true) {
@@ -56,6 +56,7 @@ export class ErrorFilter implements ExceptionFilter {
     };
 
     const errorResponse = prismaErrorMap[exception.code] || {
+      statusCode: 500,
       message: exception.message,
       error: 'Database Error',
     };
@@ -71,22 +72,50 @@ export class ErrorFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
+    let message: string;
+
+    if (typeof exceptionResponse === 'string') {
+      message = exceptionResponse;
+    } else if (
+      exceptionResponse &&
+      typeof exceptionResponse === 'object' &&
+      'message' in exceptionResponse
+    ) {
+      message = (exceptionResponse as { message: string }).message;
+    } else {
+      message = exception.message;
+    }
+
     response.status(status).json({
-      message:
-        typeof exceptionResponse === 'string'
-          ? exceptionResponse
-          : (exceptionResponse as any).message || exception.message,
+      message,
       error: exception.name,
     });
   }
 
-  private handleUnknownError(exception: any, response: Response) {
-    const statusCode = exception.statusCode || 500;
+  private handleUnknownError(exception: unknown, response: Response) {
+    let statusCode = 500;
+    if (
+      exception &&
+      typeof exception === 'object' &&
+      'statusCode' in exception &&
+      typeof (exception as { statusCode: unknown }).statusCode === 'number'
+    ) {
+      statusCode = (exception as { statusCode: number }).statusCode;
+    }
+    let message = 'Internal server error';
 
+    if (
+      exception &&
+      typeof exception === 'object' &&
+      'message' in exception &&
+      typeof (exception as { message: unknown }).message === 'string'
+    ) {
+      message = (exception as { message: string }).message;
+    }
     this.logger.error('Unknown error:', exception);
 
     response.status(statusCode).json({
-      message: exception.message || 'Internal server error',
+      message,
       error: 'Internal Server Error',
     });
   }

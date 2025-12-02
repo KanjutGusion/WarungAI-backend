@@ -1,32 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
-
-interface ParsedItem {
-  name: string;
-  qty: number;
-  price: number;
-}
-
-export interface ParsedNota {
-  items: ParsedItem[];
-  total: number;
-  rawText: string;
-}
+import { ParsedItemDto } from 'src/_common/dto/nota/parsed-item.dto';
+import { ParsedNotaDto } from 'src/_common/dto/nota/parsed-nota.dto';
 
 @Injectable()
 export class NotaService {
   private readonly logger = new Logger(NotaService.name);
 
-  parse(ocrResult: any): ParsedNota {
+  parse(ocrResult: unknown): ParsedNotaDto {
     this.logger.log('Parsing OCR result...');
     const text = this.extractText(ocrResult);
     this.logger.debug(`Extracted Text:\n---\n${text}\n---`);
     const lines = text.split('\n').filter((line) => line.trim() !== '');
 
-    const items: ParsedItem[] = [];
+    const items: ParsedItemDto[] = [];
     let total = 0;
 
     // Regex for Markdown table format, handles lines starting with | or -
-    const itemRegex = /^[|\-]\s*(.*?)\s*\|.*\|\s*([\d.,]+)/;
+    const itemRegex = /^[|-]\s*(.*?)\s*\|.*\|\s*([\d.,]+)/;
 
     for (const line of lines) {
       this.logger.debug(`Processing line: "${line}"`);
@@ -36,7 +26,11 @@ export class NotaService {
         const name = match[1].trim();
 
         // Skip header/total lines
-        if (!name || name.toLowerCase().includes('item') || name.toLowerCase().includes('total')) {
+        if (
+          !name ||
+          name.toLowerCase().includes('item') ||
+          name.toLowerCase().includes('total')
+        ) {
           continue;
         }
 
@@ -73,33 +67,60 @@ export class NotaService {
     };
   }
 
-  private extractText(ocrResult: any): string {
+  private extractText(ocrResult: unknown): string {
     if (typeof ocrResult === 'string') {
       return ocrResult;
     }
 
     if (
       ocrResult &&
-      ocrResult.extracted_text &&
-      typeof ocrResult.extracted_text === 'string'
+      typeof ocrResult === 'object' &&
+      'extracted_text' in ocrResult &&
+      typeof (ocrResult as { extracted_text: unknown }).extracted_text ===
+        'string'
     ) {
-      return ocrResult.extracted_text;
+      return (ocrResult as { extracted_text: string }).extracted_text;
     }
 
     if (
       ocrResult &&
-      ocrResult.data &&
-      typeof ocrResult.data.text === 'string'
+      typeof ocrResult === 'object' &&
+      'data' in ocrResult &&
+      (ocrResult as { data: unknown }).data &&
+      typeof (ocrResult as { data: unknown }).data === 'object' &&
+      'text' in (ocrResult as { data: object }).data &&
+      typeof (
+        (ocrResult as { data: { text: unknown } }).data as { text: unknown }
+      ).text === 'string'
     ) {
-      return ocrResult.data.text;
+      return (
+        (ocrResult as { data: { text: string } }).data as { text: string }
+      ).text;
     }
 
-    if (ocrResult && ocrResult.text && typeof ocrResult.text === 'string') {
-      return ocrResult.text;
+    if (
+      ocrResult &&
+      typeof ocrResult === 'object' &&
+      'text' in ocrResult &&
+      typeof (ocrResult as { text: unknown }).text === 'string'
+    ) {
+      return (ocrResult as { text: string }).text;
     }
 
-    if (ocrResult && Array.isArray(ocrResult)) {
-      return ocrResult.map((r) => r.text).join('\n');
+    if (Array.isArray(ocrResult)) {
+      return ocrResult
+        .map((r: unknown) => {
+          if (
+            r &&
+            typeof r === 'object' &&
+            'text' in r &&
+            typeof (r as { text: unknown }).text === 'string'
+          ) {
+            return (r as { text: string }).text;
+          }
+          return '';
+        })
+        .join('\n');
     }
 
     this.logger.warn('Could not extract text from OCR result.');

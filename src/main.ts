@@ -30,8 +30,8 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
-  const configService = app.get(ConfigService);
-  const port = configService.get('HOST_PORT') ?? 3000;
+  const configService = app.get<ConfigService>(ConfigService);
+  const port = parseInt(configService.get<string>('HOST_PORT') ?? '3000', 10);
 
   const logger = new Logger('Bootstrap');
 
@@ -42,4 +42,8 @@ async function bootstrap() {
   logger.log(`App is running on: ${appUrl}/${globalPrefix}`);
   logger.log(`API Documentation available at: ${appUrl}/api/docs`);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  // tslint:disable-next-line: no-console
+  console.error(err);
+  process.exit(1);
+});

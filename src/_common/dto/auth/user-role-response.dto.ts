@@ -1,13 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { EUserStatus } from 'src/generated/prisma/enums';
 import { EUserRole } from 'src/types';
-import {
-  IsEmail,
-  IsEnum,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
 
 export class UserRoleResponseDto {
   @ApiProperty({

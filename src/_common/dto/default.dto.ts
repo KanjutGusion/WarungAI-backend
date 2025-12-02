@@ -11,7 +11,7 @@ export class DefaultPaginationDto {
     example: 1,
   })
   @IsOptional()
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) => parseInt(String(value), 10))
   @IsNumber()
   @Min(1)
   page?: number = 1;
@@ -24,7 +24,7 @@ export class DefaultPaginationDto {
     example: 10,
   })
   @IsOptional()
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) => parseInt(String(value), 10))
   @IsNumber()
   @Min(1)
   limit?: number = 10;

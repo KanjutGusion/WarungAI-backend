@@ -18,7 +18,7 @@ export type JwtPayload = {
     phone: string;
     email: string;
     status: EUserStatus;
-    role: { id: String; name: EUserRole };
+    role: { id: string; name: EUserRole };
   };
 };
 
