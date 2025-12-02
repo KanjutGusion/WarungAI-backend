@@ -10,7 +10,7 @@ ENV NODE_ENV=development
 WORKDIR /usr/src/app
 
 COPY package.json bun.lockb* ./
-RUN bun install
+RUN bun install --ignore-scripts
 
 COPY . .
 
@@ -41,7 +41,7 @@ WORKDIR /usr/src/app
 
 # Install production dependencies
 COPY package.json bun.lockb* ./
-RUN bun install --production
+RUN bun install --production --ignore-scripts
 
 # Copy prisma schema
 COPY prisma ./prisma
