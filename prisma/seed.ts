@@ -1,5 +1,3 @@
-#!/usr/bin/env bun
-
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import minimist from 'minimist';
@@ -77,7 +75,7 @@ async function main() {
 
   const args = minimist(process.argv.slice(2));
   // --all = semua, default juga semua jika tanpa argumen
-  // --permission, --role, --plan, --module, --user
+  // --role, --user
   const runAll = args.all || Object.keys(args).length === 1;
   if (runAll || args.role) await seedRoles();
   if (runAll || args.user) await seedSuperAdminUser();
@@ -89,6 +87,7 @@ async function main() {
     );
   }
 }
+
 main()
   .catch((e) => {
     console.error('❌ Error during seeding:', e);

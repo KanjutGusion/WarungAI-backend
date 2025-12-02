@@ -4,7 +4,7 @@
 FROM oven/bun:1 AS development
 
 # Needed by bun
-RUN apt-get update -y && apt-get install -y openssl
+# RUN apt-get update -y && apt-get install -y openssl
 
 ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 ENV DATABASE_URL=$DATABASE_URL
@@ -37,7 +37,7 @@ RUN bun run build
 FROM oven/bun:1 AS production
 
 # Needed by bun
-RUN apt-get update -y && apt-get install -y openssl
+# RUN apt-get update -y && apt-get install -y openssl
 
 ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 ENV DATABASE_URL=$DATABASE_URL
