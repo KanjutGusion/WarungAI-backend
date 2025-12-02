@@ -1,14 +1,68 @@
+version: "3.8"
+
 services:
-  api:
-    image: ghcr.io/kanjutgusion/warungai-backend:latest
-    container_name: warungai-api
+  # ==============================
+  # LOCAL DEV ONLY (Profile: dev)
+  # ==============================
+  postgres:
+    profiles: ["dev"] # <--- HANYA JALAN KALAU DIPANGGIL DEV
+    image: postgres:15-alpine
+    container_name: warungai-postgres
     restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dummy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dummy}
+      POSTGRES_DB: ${POSTGRES_DB:-dummy}
     ports:
-      - "${HOST_PORT:-3001}:3000"
+      - "5432:5432"
+    volumes:
+      - ./.postgres-data:/var/lib/postgresql/data
+    networks:
+      - warungnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dummy}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-dev:
+    profiles: ["dev"] # <--- HANYA JALAN KALAU DIPANGGIL DEV
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: warungai-api-dev
+    restart: no
+    ports:
+      - "${EXPOSE_PORT:-3001}:3000"
     env_file:
       - .env
     environment:
-      # This one should 3000 one and only, this image only export 3000
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-dummy}:${POSTGRES_PASSWORD:-dummy}@postgres:5432/${POSTGRES_DB:-dummy}?schema=public
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - warungnet
+    command: sh -c "bunx prisma db push && bunx prisma db seed && bun run start:dev"
+
+  # ==============================
+  # PRODUCTION ONLY (Profile: prod)
+  # ==============================
+  api:
+    profiles: ["prod"] # <--- INI WAJIB ADA SUPAYA AMAN DI VPS
+    image: ghcr.io/kanjutgusion/warungai-backend:latest
+    container_name: warungai-api-prod
+    restart: unless-stopped
+    ports:
+      - "${EXPOSE_PORT:-3001}:3000"
+    env_file:
+      - .env
+    environment:
       - HOST_PORT=3000
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
@@ -16,7 +70,7 @@ services:
       - KOLOSAL_API_KEY=${KOLOSAL_API_KEY}
     networks:
       - warungnet
-    command: sh -c "bunx prisma db push && bun run start"
+    command: sh -c "bunx prisma db push && bun run start:prod"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
       interval: 30s
