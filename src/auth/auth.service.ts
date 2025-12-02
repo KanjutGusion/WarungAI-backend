@@ -9,7 +9,6 @@ import { JwtService } from '@nestjs/jwt';
 
 import { PrismaService } from 'src/_common/prisma/prisma.service';
 import { AuthLoginPayload, AuthRegisterPayload } from './zod';
-import { Response } from 'express';
 import { EUserRole } from 'src/types';
 import { User } from 'src/generated/prisma/client';
 
@@ -127,11 +126,6 @@ export class AuthService {
         },
       },
     };
-  }
-
-  async logout(res: Response) {
-    res.clearCookie('token');
-    return 'Logout Success';
   }
 
   async me(userId: string) {
