@@ -9,7 +9,7 @@
 
 Traditional "Warungs" in Indonesia struggle with financial tracking. They rely on piles of handwritten notes, making it impossible to calculate true profit, track inventory, or determine competitive pricing. They are losing against modern retail chains.
 
-## 💡 The Solution
+## The Solution
 
 **WarungSense AI** transforms a simple smartphone camera into a powerful business consultant.
 
@@ -17,20 +17,20 @@ Traditional "Warungs" in Indonesia struggle with financial tracking. They rely o
 2.  **Parse:** Our AI extracts items, quantities, and prices automatically.
 3.  **Analyze:** Get instant profit calculations and AI-driven pricing recommendations based on location.
 
-## ✨ Key Features
+## Key Features
 
-- **🧾 Smart OCR Engine:** Converts unstructured receipt images into structured JSON data.
-- **💰 AI Pricing Agent:** Analyzes your location and competitors to suggest the _perfect_ selling price to maximize margin.
-- **📊 Real-time Dashboard:** View daily turnover (Omzet) and profit analysis instantly.
+- **Smart OCR Engine:** Converts unstructured receipt images into structured JSON data.
+- **AI Pricing Agent:** Analyzes your location and competitors to suggest the _perfect_ selling price to maximize margin.
+- **Real-time Dashboard:** View daily turnover (Omzet) and profit analysis instantly.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Runtime:** [Bun](https://bun.sh) (Ultra-fast JavaScript runtime)
 - **Framework:** NestJS (Scalable Server-side Architecture)
 - **Database:** PostgreSQL + Prisma ORM
 - **Infrastructure:** Docker, GitHub Actions, GHCR.
 
-## 🚀 Getting Started (Fast Track)
+## Getting Started (Fast Track)
 
 We use Docker to make running this app effortless.
 
