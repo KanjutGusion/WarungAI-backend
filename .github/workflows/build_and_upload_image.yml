@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main # Production deployment
+      - main
     tags:
       - 'latest'
 
@@ -38,15 +38,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # Tag: latest (for main branch)
             type=raw,value=latest,enable={{is_default_branch}}
-            # Tag: branch name
-            type=ref,event=branch
-            # Tag: semantic version (v1.2.3 → 1.2.3)
-            type=semver,pattern={{version}}
-            # Tag: semantic version (v1.2.3 → 1.2)
-            type=semver,pattern={{major}}.{{minor}}
-            # Tag: git short SHA
             type=sha,prefix=sha-
 
       - name: Build and push Docker image
@@ -80,15 +72,19 @@ jobs:
 
             git pull origin main
 
-            # Pull latest image
+            # 2. Login GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose -f docker-compose.yml pull
 
-            # Restart with new image
-            docker compose -f docker-compose.yml up -d --force-recreate
+            # 3. Pull image (KHUSUS PROFILE PROD)
+            # Tanpa --profile prod, dia ga bakal pull image api
+            docker compose -f docker-compose.yml --profile prod pull
 
-            # Cleanup old images
+            # 4. Restart container (KHUSUS PROFILE PROD)
+            # Ini akan menyalakan service 'api' dan mengabaikan 'postgres' & 'api-dev'
+            docker compose -f docker-compose.yml --profile prod up -d --force-recreate
+
+            # 5. Cleanup
             docker image prune -af --filter "until=72h"
 
-            # Show logs
-            docker compose -f docker-compose.yml logs --tail=50
+            # 6. Show logs
+            docker compose -f docker-compose.yml --profile prod logs --tail=50
