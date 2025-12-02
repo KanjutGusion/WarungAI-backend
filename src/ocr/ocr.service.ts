@@ -10,6 +10,7 @@ import { firstValueFrom } from 'rxjs';
 import FormData from 'form-data';
 import { NotaService } from 'src/nota/nota.service';
 import { PrismaService } from 'src/_common/prisma/prisma.service';
+import { OcrProcessResponseDto } from 'src/_common/dto/ocr/ocr-process-response.dto';
 
 @Injectable()
 export class OcrService {
@@ -29,7 +30,7 @@ export class OcrService {
     }
   }
 
-  async processOcr(file: Express.Multer.File): Promise<any> {
+  async processOcr(file: Express.Multer.File): Promise<OcrProcessResponseDto> {
     if (!file) {
       throw new InternalServerErrorException('No file provided for OCR.');
     }
@@ -45,10 +46,6 @@ export class OcrService {
             Authorization: `Bearer ${this.kolosalApiKey}`,
           },
         }),
-      );
-
-      this.logger.debug(
-        `Kolosal API Response: ${JSON.stringify(response.data, null, 2)}`,
       );
 
       const parsedNota = this.notaService.parse(response.data);
@@ -83,14 +80,13 @@ export class OcrService {
         items: session.items.map((item) => ({
           name: item.name,
           qty: item.qty,
-          price: item.subtotal,
+          price: item.subtotal.toNumber(),
         })),
-        total: session.sale!.totalAmount,
-        profit: session.sale!.profit,
+        total: session.sale!.totalAmount.toNumber(),
+        profit: session.sale!.profit.toNumber(),
         summary: {},
       };
     } catch (error) {
-      this.logger.error('Error processing OCR', error.stack);
       throw new InternalServerErrorException(
         'Failed to process OCR request.',
         error.response?.data,

@@ -5,11 +5,10 @@ import {
   HttpException,
   Logger,
 } from '@nestjs/common';
-import z, { ZodError } from 'zod';
 import { Response } from 'express';
 import { Prisma } from 'src/generated/prisma/client';
 
-@Catch(ZodError, Prisma.PrismaClientKnownRequestError, HttpException)
+@Catch(Prisma.PrismaClientKnownRequestError, HttpException)
 export class ErrorFilter implements ExceptionFilter {
   private logger = new Logger(ErrorFilter.name);
 
@@ -17,13 +16,6 @@ export class ErrorFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse<Response>();
 
     switch (true) {
-      case exception instanceof ZodError:
-        this.logger.error(
-          'Zod error caught:',
-          JSON.stringify(z.flattenError(exception)),
-        );
-        this.handleZodError(exception, response);
-        break;
       case exception instanceof Prisma.PrismaClientKnownRequestError:
         this.logger.error('Prisma error caught:', exception);
         this.handlePrismaError(exception, response);
@@ -36,13 +28,6 @@ export class ErrorFilter implements ExceptionFilter {
         this.logger.error('Unknown error caught:', exception);
         this.handleUnknownError(exception, response);
     }
-  }
-
-  private handleZodError(exception: ZodError, response: Response) {
-    response.status(400).json({
-      error: z.flattenError(exception),
-      message: 'Validation Error',
-    });
   }
 
   private handlePrismaError(
