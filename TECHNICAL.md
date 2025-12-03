@@ -79,7 +79,8 @@ We utilize a robust CI/CD pipeline using GitHub Actions, GHCR (Container Registr
 
 1. The Pipeline Flow
    1. The deployment process is automated to ensure reliability and consistency:
-   2. Push to Main: Triggers the workflow.
+
+   2. Update tag on main: Triggers the workflow.
 
    3. Build: Creates a Docker image using multi-stage builds.
 
@@ -90,7 +91,7 @@ We utilize a robust CI/CD pipeline using GitHub Actions, GHCR (Container Registr
 2. Docker Strategy (Profiles)
    1. We use Docker Compose Profiles to separate environments in a single docker-compose.yml file. This prevents development services (like local DBs) from running in production.
 
-   2. Profile dev: Runs API (with Hot-Reload), PostgreSQL, and mounts local volumes.
+   2. Profile dev: Runs API, PostgreSQL, and mounts local volumes.
 
    3. Profile prod: Runs the optimized production image pulled from GHCR.
 
@@ -100,13 +101,16 @@ We utilize a robust CI/CD pipeline using GitHub Actions, GHCR (Container Registr
 
 # GitHub Actions deployment step
 script: |
-  # 1. Pull latest code & image
-  git pull origin main
-  docker compose -f docker-compose.yml --profile prod pull
+  # IMAGE_TAG obtained from github actions
+  export IMAGE_TAG=${{ github.ref_name }}
+  echo "🚀 Deploying version: $IMAGE_TAG"
 
-  # 2. Restart Containers (Zero-downtime strategy attempt)
+  # 2. Pull latest code (docker-compose.yml may changed) & image
+  IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.yml --profile prod pull
+
+  # 3. Restart Containers (Zero-downtime strategy attempt)
   # Only services marked with profiles: ["prod"] will start
-  docker compose -f docker-compose.yml --profile prod up -d --force-recreate
+  IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.yml --profile prod up -d --force-recreate
 ```
 
 ### ⚡ Performance & Optimization
