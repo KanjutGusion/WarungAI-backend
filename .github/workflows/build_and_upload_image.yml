@@ -2,10 +2,8 @@ name: Build and Deploy
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - 'latest'
+      - 'v*'
 
 env:
   REGISTRY: ghcr.io
@@ -38,8 +36,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -58,7 +56,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Deploy to VPS
@@ -70,21 +68,17 @@ jobs:
           script: |
             cd /home/raihan/backend
 
+            export IMAGE_TAG=${{ github.ref_name }}
+            echo "🚀 Deploying version: $IMAGE_TAG"
+
+            git fetch origin main
+            git checkout main
             git pull origin main
 
-            # 2. Login GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 3. Pull image (KHUSUS PROFILE PROD)
-            # Tanpa --profile prod, dia ga bakal pull image api
-            docker compose -f docker-compose.yml --profile prod pull
+            IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.yml --profile prod pull
 
-            # 4. Restart container (KHUSUS PROFILE PROD)
-            # Ini akan menyalakan service 'api' dan mengabaikan 'postgres' & 'api-dev'
-            docker compose -f docker-compose.yml --profile prod up -d --force-recreate
+            IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.yml --profile prod up -d --force-recreate
 
-            # 5. Cleanup
-            docker image prune -af --filter "until=72h"
-
-            # 6. Show logs
-            docker compose -f docker-compose.yml --profile prod logs --tail=50
+            docker image prune -af --filter "until=24h"

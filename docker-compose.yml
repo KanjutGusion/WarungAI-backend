@@ -55,7 +55,7 @@ services:
   # ==============================
   api:
     profiles: ["prod"]
-    image: ghcr.io/kanjutgusion/warungai-backend:latest
+    image: ghcr.io/kanjutgusion/warungai-backend:${IMAGE_TAG:-latest}
     container_name: warungai-api-prod
     restart: unless-stopped
     ports:
