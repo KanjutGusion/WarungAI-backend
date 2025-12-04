@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/_common/prisma/prisma.service';
 import { SalesSummaryDto } from 'src/_common/dto/analytics/sales-summary.dto';
 import { TopItemDto } from 'src/_common/dto/analytics/top-item.dto';
+import { Prisma } from 'src/generated/prisma/client';
 
 @Injectable()
 export class AnalyticsService {
@@ -14,7 +15,7 @@ export class AnalyticsService {
     startDate?: Date,
     endDate?: Date,
   ): Promise<SalesSummaryDto> {
-    const whereClause: any = {};
+    const whereClause: Prisma.SaleWhereInput = {};
 
     if (userId) {
       whereClause.session = { userId };
@@ -75,7 +76,7 @@ export class AnalyticsService {
     startDate?: Date,
     endDate?: Date,
   ): Promise<TopItemDto[]> {
-    const whereClause: any = {};
+    const whereClause: Prisma.ItemWhereInput = {};
 
     if (userId) {
       whereClause.session = { userId };
@@ -130,7 +131,7 @@ export class AnalyticsService {
   }
 
   async getRecentSales(userId?: string, limit: number = 10) {
-    const whereClause: any = {};
+    const whereClause: Prisma.SessionWhereInput = {};
 
     if (userId) {
       whereClause.userId = userId;

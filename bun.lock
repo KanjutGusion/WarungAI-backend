@@ -19,6 +19,7 @@
         "@prisma/client": "^7.0.1",
         "@swc/cli": "^0.7.9",
         "@swc/core": "^1.15.3",
+        "@types/pdfkit": "^0.17.4",
         "@types/pg": "^8.15.6",
         "bcrypt": "^6.0.0",
         "class-transformer": "^0.5.1",
@@ -523,6 +524,8 @@
     "@types/passport-jwt": ["@types/passport-jwt@3.0.13", "", { "dependencies": { "@types/express": "*", "@types/jsonwebtoken": "*", "@types/passport-strategy": "*" } }, "sha512-fjHaC6Bv8EpMMqzTnHP32SXlZGaNfBPC/Po5dmRGYi2Ky7ljXPbGnOy+SxZqa6iZvFgVhoJ1915Re3m93zmcfA=="],
 
     "@types/passport-strategy": ["@types/passport-strategy@0.2.38", "", { "dependencies": { "@types/express": "*", "@types/passport": "*" } }, "sha512-GC6eMqqojOooq993Tmnmp7AUTbbQSgilyvpCYQjT+H6JfG/g6RGc7nXEniZlp0zyKJ0WUdOiZWLBZft9Yug1uA=="],
+
+    "@types/pdfkit": ["@types/pdfkit@0.17.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-odAmVuuguRxKh1X4pbMrJMp8ecwNqHRw6lweupvzK+wuyNmi6wzlUlGVZ9EqMvp3Bs2+L9Ty0sRlrvKL+gsQZg=="],
 
     "@types/pg": ["@types/pg@8.15.6", "", { "dependencies": { "@types/node": "*", "pg-protocol": "*", "pg-types": "^2.2.0" } }, "sha512-NoaMtzhxOrubeL/7UZuNTrejB4MPAJ0RpxZqXQf2qXuVlTPuG6Y8p4u9dKRaue4yjmC7ZhzVO2/Yyyn25znrPQ=="],
 

@@ -24,7 +24,7 @@ export class ExportService {
   /**
    * Export sales data to CSV
    */
-  async exportToCSV(data: SalesExportData[]): Promise<Buffer> {
+  exportToCSV(data: SalesExportData[]): Buffer {
     const records = data.flatMap((sale) =>
       sale.items.map((item) => ({
         transaction_id: sale.id,
@@ -180,7 +180,7 @@ export class ExportService {
       const doc = new PDFDocument({ margin: 50 });
       const chunks: Buffer[] = [];
 
-      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 

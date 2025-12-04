@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/_common/prisma/prisma.service';
 import { AiService } from 'src/_common/ai/ai.service';
 import { PricingRecommendationDto } from 'src/_common/dto/pricing/pricing-recommendation.dto';
+import { Prisma } from 'src/generated/prisma/client';
 
 @Injectable()
 export class PricingService {
@@ -21,7 +22,7 @@ export class PricingService {
     targetMargin: number = 25,
   ): Promise<PricingRecommendationDto[]> {
     // Get all items for the user
-    const whereClause: any = {};
+    const whereClause: Prisma.ItemWhereInput = {};
     if (userId) {
       whereClause.session = { userId };
     }

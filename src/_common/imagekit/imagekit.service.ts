@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   Injectable,
   Logger,
@@ -59,17 +58,17 @@ export interface ImageKitError {
   help: string;
 }
 
-const ImageKitUploadSchema = z.object({
-  fileName: z.string().optional(),
-  folder: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  customMetadata: z.record(z.string(), z.string()).optional(),
-  isPrivateFile: z.boolean().optional().default(false),
-  useUniqueFileName: z.boolean().optional().default(true),
-  overwriteFile: z.boolean().optional().default(false),
-});
+// const ImageKitUploadSchema = z.object({
+//   fileName: z.string().optional(),
+//   folder: z.string().optional(),
+//   tags: z.array(z.string()).optional(),
+//   customMetadata: z.record(z.string(), z.string()).optional(),
+//   isPrivateFile: z.boolean().optional().default(false),
+//   useUniqueFileName: z.boolean().optional().default(true),
+//   overwriteFile: z.boolean().optional().default(false),
+// });
 
-export type ImageKitUploadDto = z.infer<typeof ImageKitUploadSchema>;
+// export type ImageKitUploadDto = z.infer<typeof ImageKitUploadSchema>;
 
 @Injectable()
 export class ImageKitService {

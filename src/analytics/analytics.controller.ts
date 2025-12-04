@@ -171,7 +171,7 @@ export class AnalyticsController {
       items: sale.items,
     }));
 
-    const buffer = await this.exportService.exportToCSV(data);
+    const buffer = this.exportService.exportToCSV(data);
 
     res.set({
       'Content-Type': 'text/csv',

@@ -25,11 +25,9 @@ export class NotaService {
 
       const match = line.match(itemRegex);
       if (match) {
-        const rowNum = match[1].trim();
+        // match[1] is row number, match[4] is unit, match[5] is unit price - not used but captured by regex
         const name = match[2].trim();
         const qty = parseInt(match[3].trim(), 10);
-        const unit = match[4].trim();
-        const unitPrice = parseFloat(match[5].replace(/[.,]/g, ''));
         const totalPrice = parseFloat(match[6].replace(/[.,]/g, ''));
 
         // Skip header/separator lines

@@ -94,14 +94,11 @@ Do not include any text before or after the JSON object.`;
     try {
       const response = await this.generateCompletion(prompt, 500, 0.3);
 
-      // Try to extract and parse JSON response
       try {
-        // Clean the response - remove markdown code blocks if present
         let cleanedResponse = response.trim();
         cleanedResponse = cleanedResponse.replace(/```json\s*/g, '');
         cleanedResponse = cleanedResponse.replace(/```\s*/g, '');
 
-        // Try to find JSON object - look for the first { and last }
         const firstBrace = cleanedResponse.indexOf('{');
         const lastBrace = cleanedResponse.lastIndexOf('}');
 
@@ -111,13 +108,24 @@ Do not include any text before or after the JSON object.`;
             .trim();
           this.logger.debug(`Extracted JSON: ${jsonStr}`);
 
-          const parsed = JSON.parse(jsonStr);
+          const parsed = JSON.parse(jsonStr) as unknown;
 
-          // Validate the parsed object has required fields
-          if (parsed.recommended_price && parsed.reasoning) {
+          if (
+            parsed &&
+            typeof parsed === 'object' &&
+            'recommended_price' in parsed &&
+            'reasoning' in parsed
+          ) {
+            const typedParsed = parsed as {
+              recommended_price: number;
+              reasoning: string;
+            };
+
             return {
-              recommended_price: Math.round(Number(parsed.recommended_price)),
-              reasoning: String(parsed.reasoning),
+              recommended_price: Math.round(
+                Number(typedParsed.recommended_price),
+              ),
+              reasoning: String(typedParsed.reasoning),
             };
           } else {
             this.logger.warn(
@@ -128,11 +136,12 @@ Do not include any text before or after the JSON object.`;
           this.logger.warn('No valid JSON braces found in response');
         }
       } catch (parseError) {
-        this.logger.warn(`JSON parsing failed: ${parseError.message}`);
+        const errorMessage =
+          parseError instanceof Error ? parseError.message : 'Unknown error';
+        this.logger.warn(`JSON parsing failed: ${errorMessage}`);
         this.logger.debug(`Full response was: ${response}`);
       }
 
-      // Fallback if JSON parsing fails
       this.logger.warn('Using fallback pricing calculation');
       return {
         recommended_price: Math.round(currentPrice * (1 + targetMargin / 100)),
@@ -179,20 +188,26 @@ Do not include any text before or after the JSON object.`;
         const jsonMatch = response.match(/\{[\s\S]*?\}/);
         if (jsonMatch) {
           const jsonStr = jsonMatch[0].trim();
-          const parsed = JSON.parse(jsonStr);
+          const parsed: unknown = JSON.parse(jsonStr);
 
-          if (parsed.insights) {
+          if (parsed && typeof parsed === 'object' && 'insights' in parsed) {
+            const typedParsed = parsed as {
+              insights: string;
+              suggestions?: unknown[];
+            };
             return {
-              insights: String(parsed.insights),
-              suggestions: Array.isArray(parsed.suggestions)
-                ? parsed.suggestions.map(String)
+              insights: String(typedParsed.insights),
+              suggestions: Array.isArray(typedParsed.suggestions)
+                ? typedParsed.suggestions.map((s: unknown) => String(s))
                 : [],
             };
           }
         }
       } catch (parseError) {
+        const errorMessage =
+          parseError instanceof Error ? parseError.message : 'Unknown error';
         this.logger.warn(
-          `JSON parsing failed for receipt analysis: ${parseError.message}`,
+          `JSON parsing failed for receipt analysis: ${errorMessage}`,
         );
       }
 
