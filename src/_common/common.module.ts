@@ -7,6 +7,8 @@ import { PrismaService } from './prisma/prisma.service';
 import { ResponseService } from './response/response.service';
 import { ErrorFilter } from './error/error.filter';
 import { JwtGuard } from './guards/jwt.guard';
+import { AiService } from './ai/ai.service';
+import { ExportService } from './export/export.service';
 
 @Global()
 @Module({
@@ -25,6 +27,8 @@ import { JwtGuard } from './guards/jwt.guard';
   providers: [
     ResponseService,
     PrismaService,
+    AiService,
+    ExportService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
@@ -38,6 +42,6 @@ import { JwtGuard } from './guards/jwt.guard';
       useClass: ErrorFilter,
     },
   ],
-  exports: [ResponseService, PrismaService],
+  exports: [ResponseService, PrismaService, AiService, ExportService],
 })
 export class CommonModule {}

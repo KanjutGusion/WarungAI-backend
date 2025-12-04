@@ -4,6 +4,7 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -17,6 +18,7 @@ import {
 import { OcrService } from './ocr.service';
 import { Roles } from 'src/_common/decorators/roles.decorator';
 import { EUserRole } from 'src/types';
+import type { ReqWithAuth } from 'src/types';
 import { OcrProcessResponseDto } from 'src/_common/dto/ocr/ocr-process-response.dto';
 import { OcrRequestDto } from 'src/_common/dto/ocr/ocr-request.dto';
 
@@ -40,7 +42,8 @@ export class OcrController {
   })
   async parseOcr(
     @UploadedFile() file: Express.Multer.File,
+    @Req() req: ReqWithAuth,
   ): Promise<OcrProcessResponseDto> {
-    return this.ocrService.processOcr(file);
+    return this.ocrService.processOcr(file, req.user?.id);
   }
 }
