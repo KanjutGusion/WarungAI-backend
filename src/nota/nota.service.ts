@@ -15,41 +15,42 @@ export class NotaService {
     const items: ParsedItemDto[] = [];
     let total = 0;
 
-    // Regex for Markdown table format, handles lines starting with | or -
-    const itemRegex = /^[|-]\s*(.*?)\s*\|.*\|\s*([\d.,]+)/;
+    // Regex for Markdown table format: | No | Name | Qty Unit | Price /Unit | Total |
+    // Captures: row number, item name, quantity, unit, unit price, and total price
+    const itemRegex =
+      /^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*(\d+)\s*([^|]+?)\s*\|\s*([\d.,]+)\s*\/[^|]+\|\s*Rp([\d.,]+)/;
 
     for (const line of lines) {
       this.logger.debug(`Processing line: "${line}"`);
 
       const match = line.match(itemRegex);
       if (match) {
-        const name = match[1].trim();
+        // match[1] is row number, match[4] is unit, match[5] is unit price - not used but captured by regex
+        const name = match[2].trim();
+        const qty = parseInt(match[3].trim(), 10);
+        const totalPrice = parseFloat(match[6].replace(/[.,]/g, ''));
 
-        // Skip header/total lines
-        if (
-          !name ||
-          name.toLowerCase().includes('item') ||
-          name.toLowerCase().includes('total')
-        ) {
+        // Skip header/separator lines
+        if (!name || name.toLowerCase().includes('nama') || name === '---') {
           continue;
         }
 
-        const qty = 1; // Assume quantity is 1 for this format
-        const price = parseFloat(match[2].replace(/[.,]/g, ''));
-
-        if (isNaN(price)) continue;
+        if (isNaN(qty) || isNaN(totalPrice)) continue;
 
         this.logger.debug(
-          `Matched item: { name: "${name}", qty: ${qty}, price: ${price} }`,
+          `Matched item: { name: "${name}", qty: ${qty}, price: ${totalPrice} }`,
         );
-        items.push({ name, qty, price });
-      } else if (line.toLowerCase().includes('total')) {
-        const totalMatch = line.match(/([\d.,]+)/);
+        items.push({ name, qty, price: totalPrice });
+      } else if (
+        line.toLowerCase().includes('jumlah') ||
+        line.toLowerCase().includes('total')
+      ) {
+        const totalMatch = line.match(/Rp([\d.,]+)/);
         if (totalMatch) {
-          total = Math.max(
-            total,
-            parseFloat(totalMatch[0].replace(/[.,]/g, '')),
-          );
+          const extractedTotal = parseFloat(totalMatch[1].replace(/[.,]/g, ''));
+          if (!isNaN(extractedTotal)) {
+            total = Math.max(total, extractedTotal);
+          }
         }
       }
     }
