@@ -94,6 +94,8 @@ We use Docker to make running this app effortless.
 
     bunx prisma generate
 
+    bun run seed
+
     bun run build
 
     bun start
@@ -108,8 +110,11 @@ We use Docker to make running this app effortless.
     ```
 
 5.  **Access the App**
-    - API Health Check: `http://localhost:3001/api/v1/health`
-    - Swagger Documentation: `http://localhost:3001/api/docs`
+    - `<PORT>`
+      - 300１ for run with `docker` way (defined in EXPOSE_PORT .env)
+      - 3000 for run with `bun` way (defined in HOST_PORT .env)
+    - API Health Check: `http://localhost:<PORT>/api/v1/health`
+    - Swagger Documentation: `http://localhost:<PORT>/api/docs`
 
 ---
 
