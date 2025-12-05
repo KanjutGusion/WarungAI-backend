@@ -48,7 +48,7 @@ services:
         condition: service_healthy
     networks:
       - warungnet
-    command: sh -c "bunx prisma db push && bun run seed && bun run start:dev"
+    command: sh -c "bunx prisma generate && bunx prisma db push && bun run seed && bun run start:dev"
 
   # ==============================
   # PRODUCTION ONLY (Profile: prod)
