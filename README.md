@@ -84,14 +84,30 @@ We use Docker to make running this app effortless.
     # Fill in your database credentials and API keys
     ```
 
-3.  **Run with Docker (Dev Mode)**
+3.  (a) **Run with Normal Bun**
+    You must have postgres instance running somewhere and add the conn string on the `.env` file.
+
+    ```bash
+    bun i
+
+    bunx prisma db push
+
+    bunx prisma generate
+
+    bun run build
+
+    bun start
+    ```
+
+4.  (b) **Run with Docker (Dev Profile)**
     This will spin up the Backend API + PostgreSQL Database automatically.
+    Also make sure your docker is running
 
     ```bash
     docker compose --profile dev up --build -d
     ```
 
-4.  **Access the App**
+5.  **Access the App**
     - API Health Check: `http://localhost:3001/api/v1/health`
     - Swagger Documentation: `http://localhost:3001/api/docs`
 
@@ -108,10 +124,10 @@ Interested in the architecture, security patterns, and DevOps pipeline?
 
 Useful references when working with NestJS:
 
-* Official Docs: [https://docs.nestjs.com](https://docs.nestjs.com)
-* Discord Community: [https://discord.gg/G7Qnnhy](https://discord.gg/G7Qnnhy)
-* DevTools: [https://devtools.nestjs.com](https://devtools.nestjs.com)
-* Courses: [https://courses.nestjs.com](https://courses.nestjs.com)
+- Official Docs: [https://docs.nestjs.com](https://docs.nestjs.com)
+- Discord Community: [https://discord.gg/G7Qnnhy](https://discord.gg/G7Qnnhy)
+- DevTools: [https://devtools.nestjs.com](https://devtools.nestjs.com)
+- Courses: [https://courses.nestjs.com](https://courses.nestjs.com)
 
 ---
 
