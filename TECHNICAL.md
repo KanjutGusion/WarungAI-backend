@@ -1,8 +1,8 @@
-# 🏗️ Technical Architecture & Engineering Deep Dive
+# Technical Architecture & Engineering Deep Dive
 
 This document outlines the architectural decisions, security patterns, and DevOps pipeline used in **WarungSense AI**. It is designed to provide transparency into the engineering standards applied throughout the project.
 
-## 📂 Project Structure
+## Project Structure
 
 We follow a modular **NestJS** architecture to ensure separation of concerns and maintainability.
 
@@ -17,7 +17,7 @@ src
 └── main.ts          # Application entry point
 ```
 
-## 🛡️ Security Pattern: "Private by Default"
+## Security Pattern: "Private by Default"
 
 One of the core architectural decisions in this project is the Global Guard Strategy. Instead of manually protecting each route, we inverted the control: All routes are private by default.
 
@@ -73,7 +73,7 @@ export class JwtGuard extends AuthGuard('jwt') {
 
 Benefit: This prevents "forgotten auth" vulnerabilities (OWASP Top 10). If a developer creates a new endpoint and forgets to add a guard, it is secure by default and returns 401 Unauthorized.
 
-## 🚀 DevOps & CI/CD Pipeline
+## DevOps & CI/CD Pipeline
 
 We utilize a robust CI/CD pipeline using GitHub Actions, GHCR (Container Registry), and Docker Compose with Profiles.
 
@@ -103,7 +103,7 @@ We utilize a robust CI/CD pipeline using GitHub Actions, GHCR (Container Registr
 script: |
   # IMAGE_TAG obtained from github actions
   export IMAGE_TAG=${{ github.ref_name }}
-  echo "🚀 Deploying version: $IMAGE_TAG"
+  echo " Deploying version: $IMAGE_TAG"
 
   # 2. Pull latest code (docker-compose.yml may changed) & image
   IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.yml --profile prod pull
@@ -113,7 +113,7 @@ script: |
   IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.yml --profile prod up -d --force-recreate
 ```
 
-### ⚡ Performance & Optimization
+### Performance & Optimization
 
 Bun Runtime: We chose Bun over Node.js for faster startup times and package installation, critical for serverless-like cold starts and rapid development iteration.
 
