@@ -13,6 +13,7 @@ import { AuthLoginDto } from 'src/_common/dto/auth/auth-login.dto';
 import { AuthResponseDto } from 'src/_common/dto/auth/auth-response.dto';
 import { CreateUserDto } from 'src/_common/dto/auth/create-user.dto';
 import { UserResponseDto } from 'src/_common/dto/auth/user-response.dto';
+import { ForgotPasswordDto } from 'src/_common/dto/auth/forgot-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -155,6 +156,44 @@ export class AuthService {
         id: user.user_role!.role_id,
         name: user.user_role!.role.name as EUserRole,
       },
+    };
+  }
+
+  async forgotPassword(data: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Email not found');
+    }
+
+    const isOldPasswordMatch = await bcrypt.compare(
+      data.oldPassword,
+      user.password,
+    );
+
+    if (!isOldPasswordMatch) {
+      throw new UnauthorizedException('Old password is incorrect');
+    }
+
+    const hashedNewPassword = await bcrypt.hash(data.newPassword, 10);
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedNewPassword,
+      },
+    });
+
+    this.logger.log(`Password changed for user: ${user.email}`);
+
+    return {
+      message: 'Password successfully changed',
     };
   }
 
