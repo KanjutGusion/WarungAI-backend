@@ -174,7 +174,7 @@ export class ExportService {
       avg_profit_margin: number;
       transaction_count: number;
     },
-    businessName: string = 'WarungSense',
+    businessName: string = 'WarungAI',
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({ margin: 50 });

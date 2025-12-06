@@ -75,6 +75,7 @@ export class AnalyticsService {
     limit: number = 10,
     startDate?: Date,
     endDate?: Date,
+    exportData: boolean = false,
   ): Promise<TopItemDto[]> {
     const whereClause: Prisma.ItemWhereInput = {};
 
@@ -88,49 +89,42 @@ export class AnalyticsService {
       if (endDate) whereClause.createdAt.lte = endDate;
     }
 
-    const items = await this.prismaService.item.findMany({
+    // Use Prisma aggregation with groupBy to get aggregated data at DB level
+    const aggregatedItems = await this.prismaService.item.groupBy({
+      by: ['name'],
       where: whereClause,
-      select: {
-        name: true,
+      _sum: {
         qty: true,
         subtotal: true,
       },
+      _count: {
+        name: true,
+      },
+      orderBy: {
+        _sum: {
+          subtotal: 'desc',
+        },
+      },
+      // Apply limit at DB level only if not exporting all data
+      ...(exportData ? {} : { take: limit }),
     });
 
-    // Group by item name
-    const itemMap = new Map<
-      string,
-      { totalQty: number; totalRevenue: number; frequency: number }
-    >();
-
-    items.forEach((item) => {
-      const existing = itemMap.get(item.name) || {
-        totalQty: 0,
-        totalRevenue: 0,
-        frequency: 0,
-      };
-      itemMap.set(item.name, {
-        totalQty: existing.totalQty + item.qty,
-        totalRevenue: existing.totalRevenue + item.subtotal.toNumber(),
-        frequency: existing.frequency + 1,
-      });
-    });
-
-    // Convert to array and sort by revenue
-    const topItems: TopItemDto[] = Array.from(itemMap.entries())
-      .map(([name, data]) => ({
-        name,
-        total_qty: data.totalQty,
-        total_revenue: data.totalRevenue,
-        frequency: data.frequency,
-      }))
-      .sort((a, b) => b.total_revenue - a.total_revenue)
-      .slice(0, limit);
+    // Transform to TopItemDto format
+    const topItems: TopItemDto[] = aggregatedItems.map((item) => ({
+      name: item.name,
+      total_qty: item._sum.qty || 0,
+      total_revenue: item._sum.subtotal?.toNumber() || 0,
+      frequency: item._count.name,
+    }));
 
     return topItems;
   }
 
-  async getRecentSales(userId?: string, limit: number = 10) {
+  async getRecentSales(
+    userId?: string,
+    limit: number = 10,
+    exportData: boolean = false,
+  ) {
     const whereClause: Prisma.SessionWhereInput = {};
 
     if (userId) {
@@ -146,7 +140,8 @@ export class AnalyticsService {
       orderBy: {
         createdAt: 'desc',
       },
-      take: limit,
+      // Only apply limit if not exporting all data
+      ...(exportData ? {} : { take: limit }),
     });
 
     return sessions.map((session) => ({

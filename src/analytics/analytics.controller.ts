@@ -58,6 +58,7 @@ export class AnalyticsController {
   @Roles([EUserRole.SELLER, EUserRole.SUPER_ADMIN])
   @ApiOperation({ summary: 'Get top selling items' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'exportData', required: false, type: Boolean })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiResponse({
@@ -68,6 +69,7 @@ export class AnalyticsController {
   async getTopItems(
     @Req() req: ReqWithAuth,
     @Query('limit') limit?: string,
+    @Query('exportData') exportData?: boolean,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<TopItemDto[]> {
@@ -80,6 +82,7 @@ export class AnalyticsController {
       limitNum,
       start,
       end,
+      exportData,
     );
   }
 
@@ -146,6 +149,7 @@ export class AnalyticsController {
   @Roles([EUserRole.SELLER, EUserRole.SUPER_ADMIN])
   @ApiOperation({ summary: 'Export sales data to CSV' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'exportAll', required: false, type: Boolean })
   @ApiResponse({
     status: 200,
     description: 'CSV file generated successfully',
@@ -154,11 +158,14 @@ export class AnalyticsController {
     @Req() req: ReqWithAuth,
     @Res({ passthrough: true }) res: Response,
     @Query('limit') limit?: string,
+    @Query('exportAll') exportAll?: string,
   ): Promise<StreamableFile> {
-    const limitNum = limit ? parseInt(limit, 10) : 100;
+    const exportAllData = exportAll === 'true';
+    const limitNum = exportAllData ? 0 : limit ? parseInt(limit, 10) : 100;
     const salesData = await this.analyticsService.getRecentSales(
       req.user?.id,
       limitNum,
+      exportAllData,
     );
 
     // Transform to match export format
@@ -187,6 +194,7 @@ export class AnalyticsController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'exportAll', required: false, type: Boolean })
   @ApiResponse({
     status: 200,
     description: 'Excel file generated successfully',
@@ -197,14 +205,17 @@ export class AnalyticsController {
     @Query('limit') limit?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('exportAll') exportAll?: string,
   ): Promise<StreamableFile> {
-    const limitNum = limit ? parseInt(limit, 10) : 100;
+    const exportAllData = exportAll === 'true';
+    const limitNum = exportAllData ? 0 : limit ? parseInt(limit, 10) : 100;
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
 
     const salesData = await this.analyticsService.getRecentSales(
       req.user?.id,
       limitNum,
+      exportAllData,
     );
     const summary = await this.analyticsService.getSalesSummary(
       req.user?.id,
@@ -239,6 +250,7 @@ export class AnalyticsController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'exportAll', required: false, type: Boolean })
   @ApiResponse({
     status: 200,
     description: 'PDF report generated successfully',
@@ -249,14 +261,17 @@ export class AnalyticsController {
     @Query('limit') limit?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('exportAll') exportAll?: string,
   ): Promise<StreamableFile> {
-    const limitNum = limit ? parseInt(limit, 10) : 100;
+    const exportAllData = exportAll === 'true';
+    const limitNum = exportAllData ? 0 : limit ? parseInt(limit, 10) : 100;
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
 
     const salesData = await this.analyticsService.getRecentSales(
       req.user?.id,
       limitNum,
+      exportAllData,
     );
     const summary = await this.analyticsService.getSalesSummary(
       req.user?.id,
