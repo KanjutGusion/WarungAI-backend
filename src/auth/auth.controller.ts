@@ -13,6 +13,7 @@ import { AuthLoginDto } from 'src/_common/dto/auth/auth-login.dto';
 import { AuthResponseDto } from 'src/_common/dto/auth/auth-response.dto';
 import { CreateUserDto } from 'src/_common/dto/auth/create-user.dto';
 import { UserResponseDto } from 'src/_common/dto/auth/user-response.dto';
+import { ForgotPasswordDto } from 'src/_common/dto/auth/forgot-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -56,5 +57,28 @@ export class AuthController {
   })
   async me(@Req() { user }: ReqWithAuth): Promise<UserResponseDto> {
     return this.authService.me(user.id);
+  }
+
+  @HttpCode(200)
+  @Public()
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Change password (forgot password)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Password successfully changed',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Password successfully changed',
+        },
+      },
+    },
+  })
+  async forgotPassword(
+    @Body() forgotPasswordReq: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    return this.authService.forgotPassword(forgotPasswordReq);
   }
 }

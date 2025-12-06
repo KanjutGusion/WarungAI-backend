@@ -80,7 +80,7 @@ jobs:
 
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            docker rm -f warungai-api || true
+            docker rm -f warungai-api-prod || true
 
             IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.yml --profile prod pull
 
