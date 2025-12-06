@@ -3,29 +3,23 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
-  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { Prisma } from 'src/generated/prisma/client';
 
 @Catch()
 export class ErrorFilter implements ExceptionFilter {
-  private logger = new Logger(ErrorFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>();
 
     switch (true) {
       case exception instanceof Prisma.PrismaClientKnownRequestError:
-        this.logger.error('Prisma error caught:', exception);
         this.handlePrismaError(exception, response);
         break;
       case exception instanceof HttpException:
-        this.logger.error('HTTP error caught:', exception);
         this.handleHttpException(exception, response);
         break;
       default:
-        this.logger.error('Unknown error caught:', exception);
         this.handleUnknownError(exception, response);
     }
   }
@@ -60,8 +54,6 @@ export class ErrorFilter implements ExceptionFilter {
       message: exception.message,
       error: 'Database Error',
     };
-
-    this.logger.error(`Prisma Error [${exception.code}]: ${exception.message}`);
 
     response
       .status(errorResponse.statusCode)
@@ -112,7 +104,6 @@ export class ErrorFilter implements ExceptionFilter {
     ) {
       message = (exception as { message: string }).message;
     }
-    this.logger.error('Unknown error:', exception);
 
     response.status(statusCode).json({
       message,

@@ -2,7 +2,6 @@ import * as bcrypt from 'bcrypt';
 import {
   ForbiddenException,
   Injectable,
-  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -17,8 +16,6 @@ import { ForgotPasswordDto } from 'src/_common/dto/auth/forgot-password.dto';
 
 @Injectable()
 export class AuthService {
-  private logger = new Logger(AuthService.name);
-
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
@@ -35,8 +32,6 @@ export class AuthService {
       if (isUserExist) throw new ForbiddenException('User already exist');
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
-
-      this.logger.log(`Register User: ${data.email}`);
 
       const user = await tx.user.create({
         data: {
@@ -111,8 +106,6 @@ export class AuthService {
     if (user.status !== 'ACTIVE') {
       throw new UnauthorizedException('User account is not active');
     }
-
-    this.logger.log(`Login User: ${user.email ?? user.phone}`);
 
     return {
       token: this._generateAuthToken(user),
@@ -189,8 +182,6 @@ export class AuthService {
         password: hashedNewPassword,
       },
     });
-
-    this.logger.log(`Password changed for user: ${user.email}`);
 
     return {
       message: 'Password successfully changed',

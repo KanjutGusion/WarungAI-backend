@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { OcrController } from './ocr.controller';
 import { OcrService } from './ocr.service';
 import { HttpModule } from '@nestjs/axios';
-import { NotaModule } from 'src/nota/nota.module';
+import { CommonModule } from 'src/_common/common.module';
 
 @Module({
-  imports: [HttpModule, NotaModule],
+  imports: [HttpModule, CommonModule],
   controllers: [OcrController],
   providers: [OcrService],
 })

@@ -1,63 +1,109 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import { ParsedItemDto } from 'src/_common/dto/ocr/parsed-item.dto';
+import { ParsedNotaDto } from 'src/_common/dto/ocr/parsed-nota.dto';
 
 @Injectable()
 export class AiService {
-  private readonly logger = new Logger(AiService.name);
   private readonly client: OpenAI;
   private readonly model = 'qwen/qwen3-vl-30b-a3b-instruct';
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('KOLOSAL_API_KEY');
+    const baseURL = this.configService.get<string>('KOLOSAL_BASE_URL');
 
     if (!apiKey) {
       throw new Error('KOLOSAL_API_KEY is not configured');
     }
 
-    // Initialize OpenAI client with Kolosal's endpoint
+    if (!baseURL) {
+      throw new Error('KOLOSAL_BASE_URL is not configured');
+    }
+
     this.client = new OpenAI({
       apiKey,
-      baseURL: 'https://api.kolosal.ai/v1',
+      baseURL,
     });
-
-    this.logger.log('AI Service initialized with Kolosal API');
   }
 
-  /**
-   * Generate AI completion using Kolosal's LLM
-   */
   async generateCompletion(
     prompt: string,
     maxTokens: number = 1000,
     temperature: number = 0.7,
   ): Promise<string> {
-    try {
-      const response = await this.client.chat.completions.create({
-        model: this.model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: maxTokens,
-        temperature,
-      });
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      max_tokens: maxTokens,
+      temperature,
+    });
 
-      const content = response.choices[0]?.message?.content || '';
-      this.logger.debug(`AI Response: ${content.substring(0, 100)}...`);
+    const content = response.choices[0]?.message?.content || '';
 
-      return content;
-    } catch (error) {
-      this.logger.error('Error generating AI completion:', error);
-      throw error;
-    }
+    return content;
   }
 
-  /**
-   * Generate pricing recommendation using AI
-   */
+  async normalizeOcrData(rawText: string): Promise<ParsedNotaDto> {
+    const prompt = `
+      You are an expert receipt parser. Extract item details from the following raw text from an OCR scan of a receipt.
+      The text is from an Indonesian receipt.
+
+      Raw Text:
+      """
+      ${rawText}
+      """
+
+      You MUST respond with ONLY a valid JSON object in the following format. Do not include any other text, explanations, or markdown.
+      The JSON object should contain 'items' (an array of objects with 'name', 'qty', and 'price') and 'total' (a number).
+      - "name" should be a string.
+      - "qty" should be a number.
+      - "price" should be the total price for that line item as a number, not the unit price.
+      - "total" should be the grand total of the receipt. If not found, calculate it from the sum of item prices.
+
+      Example response:
+      {
+        "items": [
+          { "name": "PRO MIE INSTAN", "qty": 3, "price": 7500 },
+          { "name": "BIMOLI MINYAK", "qty": 1, "price": 25000 }
+        ],
+        "total": 32500
+      }
+    `;
+
+    const result = await this.generateCompletion(prompt, 1000, 0.2);
+    let cleanedResponse = result.trim();
+    cleanedResponse = cleanedResponse.replace(/```json\s*/g, '');
+    cleanedResponse = cleanedResponse.replace(/```\s*/g, '');
+    const jsonMatch = cleanedResponse.match(/\{[\s\S]*?\}/);
+
+    if (jsonMatch) {
+      const jsonStr = jsonMatch[0].trim();
+      const parsed = JSON.parse(jsonStr) as {
+        items: ParsedItemDto[];
+        total: number;
+      };
+
+      if (parsed.items && parsed.total) {
+        return {
+          ...parsed,
+          rawText,
+        };
+      }
+    }
+
+    return {
+      items: [],
+      total: 0,
+      rawText,
+    };
+  }
+
   async generatePricingRecommendation(
     itemName: string,
     currentPrice: number,
@@ -91,71 +137,46 @@ Provide a recommended selling price and reasoning in this EXACT JSON format:
 
 Do not include any text before or after the JSON object.`;
 
-    try {
-      const response = await this.generateCompletion(prompt, 500, 0.3);
+    const response = await this.generateCompletion(prompt, 500, 0.3);
 
-      try {
-        let cleanedResponse = response.trim();
-        cleanedResponse = cleanedResponse.replace(/```json\s*/g, '');
-        cleanedResponse = cleanedResponse.replace(/```\s*/g, '');
+    let cleanedResponse = response.trim();
+    cleanedResponse = cleanedResponse.replace(/```json\s*/g, '');
+    cleanedResponse = cleanedResponse.replace(/```\s*/g, '');
 
-        const firstBrace = cleanedResponse.indexOf('{');
-        const lastBrace = cleanedResponse.lastIndexOf('}');
+    const firstBrace = cleanedResponse.indexOf('{');
+    const lastBrace = cleanedResponse.lastIndexOf('}');
 
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          const jsonStr = cleanedResponse
-            .substring(firstBrace, lastBrace + 1)
-            .trim();
-          this.logger.debug(`Extracted JSON: ${jsonStr}`);
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const jsonStr = cleanedResponse
+        .substring(firstBrace, lastBrace + 1)
+        .trim();
 
-          const parsed = JSON.parse(jsonStr) as unknown;
+      const parsed = JSON.parse(jsonStr) as unknown;
 
-          if (
-            parsed &&
-            typeof parsed === 'object' &&
-            'recommended_price' in parsed &&
-            'reasoning' in parsed
-          ) {
-            const typedParsed = parsed as {
-              recommended_price: number;
-              reasoning: string;
-            };
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        'recommended_price' in parsed &&
+        'reasoning' in parsed
+      ) {
+        const typedParsed = parsed as {
+          recommended_price: number;
+          reasoning: string;
+        };
 
-            return {
-              recommended_price: Math.round(
-                Number(typedParsed.recommended_price),
-              ),
-              reasoning: String(typedParsed.reasoning),
-            };
-          } else {
-            this.logger.warn(
-              `Missing required fields in parsed JSON: ${JSON.stringify(parsed)}`,
-            );
-          }
-        } else {
-          this.logger.warn('No valid JSON braces found in response');
-        }
-      } catch (parseError) {
-        const errorMessage =
-          parseError instanceof Error ? parseError.message : 'Unknown error';
-        this.logger.warn(`JSON parsing failed: ${errorMessage}`);
-        this.logger.debug(`Full response was: ${response}`);
+        return {
+          recommended_price: Math.round(Number(typedParsed.recommended_price)),
+          reasoning: String(typedParsed.reasoning),
+        };
       }
-
-      this.logger.warn('Using fallback pricing calculation');
-      return {
-        recommended_price: Math.round(currentPrice * (1 + targetMargin / 100)),
-        reasoning: `Fallback calculation: ${targetMargin}% markup on current price of Rp ${currentPrice.toLocaleString('id-ID')}`,
-      };
-    } catch (error) {
-      this.logger.error('Error generating pricing recommendation:', error);
-      throw error;
     }
+
+    return {
+      recommended_price: Math.round(currentPrice * (1 + targetMargin / 100)),
+      reasoning: `Fallback calculation: ${targetMargin}% markup on current price of Rp ${currentPrice.toLocaleString('id-ID')}`,
+    };
   }
 
-  /**
-   * Analyze receipt text and provide insights
-   */
   async analyzeReceipt(
     rawText: string,
     items: Array<{ name: string; qty: number; price: number }>,
@@ -181,50 +202,13 @@ Provide business insights and suggestions in this EXACT JSON format:
 
 Do not include any text before or after the JSON object.`;
 
-    try {
-      const response = await this.generateCompletion(prompt, 800, 0.7);
+    const response = await this.generateCompletion(prompt, 800, 0.7);
 
-      try {
-        const jsonMatch = response.match(/\{[\s\S]*?\}/);
-        if (jsonMatch) {
-          const jsonStr = jsonMatch[0].trim();
-          const parsed: unknown = JSON.parse(jsonStr);
-
-          if (parsed && typeof parsed === 'object' && 'insights' in parsed) {
-            const typedParsed = parsed as {
-              insights: string;
-              suggestions?: unknown[];
-            };
-            return {
-              insights: String(typedParsed.insights),
-              suggestions: Array.isArray(typedParsed.suggestions)
-                ? typedParsed.suggestions.map((s: unknown) => String(s))
-                : [],
-            };
-          }
-        }
-      } catch (parseError) {
-        const errorMessage =
-          parseError instanceof Error ? parseError.message : 'Unknown error';
-        this.logger.warn(
-          `JSON parsing failed for receipt analysis: ${errorMessage}`,
-        );
-      }
-
-      // Fallback to using raw response
-      return {
-        insights: response.substring(0, 500),
-        suggestions: [],
-      };
-    } catch (error) {
-      this.logger.error('Error analyzing receipt:', error);
-      throw error;
-    }
+    return {
+      insights: response.substring(0, 500),
+      suggestions: [],
+    };
   }
-
-  /**
-   * Generate market insights based on sales data
-   */
   async generateMarketInsights(
     topItems: Array<{
       name: string;
@@ -264,11 +248,6 @@ Provide comprehensive market insights and strategic recommendations for this war
 
 Keep it concise and actionable (max 300 words).`;
 
-    try {
-      return await this.generateCompletion(prompt, 1000, 0.7);
-    } catch (error) {
-      this.logger.error('Error generating market insights:', error);
-      throw error;
-    }
+    return await this.generateCompletion(prompt, 1000, 0.7);
   }
 }

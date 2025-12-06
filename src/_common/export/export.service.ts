@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Workbook } from 'exceljs';
 import PDFDocument from 'pdfkit';
 import { stringify } from 'csv-stringify/sync';
@@ -19,8 +19,6 @@ export interface SalesExportData {
 
 @Injectable()
 export class ExportService {
-  private readonly logger = new Logger(ExportService.name);
-
   /**
    * Export sales data to CSV
    */
@@ -67,7 +65,6 @@ export class ExportService {
   ): Promise<Buffer> {
     const workbook = new Workbook();
 
-    // Summary sheet
     if (summary) {
       const summarySheet = workbook.addWorksheet('Summary');
       summarySheet.columns = [
@@ -91,7 +88,6 @@ export class ExportService {
         { metric: 'Transaction Count', value: summary.transaction_count },
       ]);
 
-      // Style header
       summarySheet.getRow(1).font = { bold: true };
       summarySheet.getRow(1).fill = {
         type: 'pattern',
@@ -100,7 +96,6 @@ export class ExportService {
       };
     }
 
-    // Transactions sheet
     const transactionsSheet = workbook.addWorksheet('Transactions');
     transactionsSheet.columns = [
       { header: 'Transaction ID', key: 'id', width: 36 },
@@ -120,7 +115,6 @@ export class ExportService {
       });
     });
 
-    // Style header
     transactionsSheet.getRow(1).font = { bold: true };
     transactionsSheet.getRow(1).fill = {
       type: 'pattern',
@@ -128,7 +122,6 @@ export class ExportService {
       fgColor: { argb: 'FF4472C4' },
     };
 
-    // Items detail sheet
     const itemsSheet = workbook.addWorksheet('Items Detail');
     itemsSheet.columns = [
       { header: 'Transaction ID', key: 'transaction_id', width: 36 },
@@ -150,7 +143,6 @@ export class ExportService {
       });
     });
 
-    // Style header
     itemsSheet.getRow(1).font = { bold: true };
     itemsSheet.getRow(1).fill = {
       type: 'pattern',
@@ -158,7 +150,6 @@ export class ExportService {
       fgColor: { argb: 'FF4472C4' },
     };
 
-    // Generate buffer
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }
@@ -184,7 +175,6 @@ export class ExportService {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Header
       doc
         .fontSize(20)
         .font('Helvetica-Bold')
@@ -201,7 +191,6 @@ export class ExportService {
         });
       doc.moveDown(2);
 
-      // Summary Section
       doc.fontSize(14).font('Helvetica-Bold').text('Summary');
       doc.moveDown(0.5);
       doc.fontSize(10).font('Helvetica');
@@ -219,12 +208,10 @@ export class ExportService {
 
       doc.moveDown(2);
 
-      // Transactions Section
       doc.fontSize(14).font('Helvetica-Bold').text('Recent Transactions');
       doc.moveDown(0.5);
       doc.fontSize(9).font('Helvetica');
 
-      // Table header
       const tableTop = doc.y;
       const colWidths = [150, 80, 80, 80];
       const headers = ['Date', 'Items', 'Total', 'Profit'];
@@ -241,7 +228,6 @@ export class ExportService {
       doc.moveDown(0.5);
       doc.font('Helvetica');
 
-      // Table rows
       data.slice(0, 20).forEach((sale) => {
         const y = doc.y;
         xPos = 50;
@@ -263,13 +249,11 @@ export class ExportService {
 
         doc.moveDown(0.3);
 
-        // Add new page if needed
         if (doc.y > 700) {
           doc.addPage();
         }
       });
 
-      // Footer
       doc
         .fontSize(8)
         .text(
