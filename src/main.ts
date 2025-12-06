@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -33,17 +33,8 @@ async function bootstrap() {
   const configService = app.get<ConfigService>(ConfigService);
   const port = parseInt(configService.get<string>('HOST_PORT') ?? '3000', 10);
 
-  const logger = new Logger('Bootstrap');
-
   await app.listen(port, '0.0.0.0');
-
-  const appUrl = await app.getUrl();
-
-  logger.log(`App is running on: ${appUrl}/${globalPrefix}`);
-  logger.log(`API Documentation available at: ${appUrl}/api/docs`);
 }
-bootstrap().catch((err) => {
-  // tslint:disable-next-line: no-console
-  console.error(err);
+bootstrap().catch(() => {
   process.exit(1);
 });

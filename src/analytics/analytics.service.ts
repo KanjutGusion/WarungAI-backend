@@ -1,13 +1,26 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/_common/prisma/prisma.service';
 import { SalesSummaryDto } from 'src/_common/dto/analytics/sales-summary.dto';
 import { TopItemDto } from 'src/_common/dto/analytics/top-item.dto';
 import { Prisma } from 'src/generated/prisma/client';
 
+interface RecentSaleItem {
+  name: string;
+  qty: number;
+  subtotal: number;
+}
+
+interface RecentSale {
+  id: string;
+  createdAt: Date;
+  itemCount: number;
+  totalAmount: number;
+  profit: number;
+  items: RecentSaleItem[];
+}
+
 @Injectable()
 export class AnalyticsService {
-  private readonly logger = new Logger(AnalyticsService.name);
-
   constructor(private readonly prismaService: PrismaService) {}
 
   async getSalesSummary(
@@ -89,7 +102,6 @@ export class AnalyticsService {
       if (endDate) whereClause.createdAt.lte = endDate;
     }
 
-    // Use Prisma aggregation with groupBy to get aggregated data at DB level
     const aggregatedItems = await this.prismaService.item.groupBy({
       by: ['name'],
       where: whereClause,
@@ -105,11 +117,9 @@ export class AnalyticsService {
           subtotal: 'desc',
         },
       },
-      // Apply limit at DB level only if not exporting all data
       ...(exportData ? {} : { take: limit }),
     });
 
-    // Transform to TopItemDto format
     const topItems: TopItemDto[] = aggregatedItems.map((item) => ({
       name: item.name,
       total_qty: item._sum.qty || 0,
@@ -124,7 +134,7 @@ export class AnalyticsService {
     userId?: string,
     limit: number = 10,
     exportData: boolean = false,
-  ) {
+  ): Promise<RecentSale[]> {
     const whereClause: Prisma.SessionWhereInput = {};
 
     if (userId) {
@@ -140,7 +150,6 @@ export class AnalyticsService {
       orderBy: {
         createdAt: 'desc',
       },
-      // Only apply limit if not exporting all data
       ...(exportData ? {} : { take: limit }),
     });
 

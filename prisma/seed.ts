@@ -20,8 +20,6 @@ const roles = [
 ];
 
 async function seedRoles() {
-  console.log('👥 Creating default roles...');
-
   const roleCreateData = roles.map((r) => ({
     name: r.name,
     description: r.description,
@@ -33,18 +31,16 @@ async function seedRoles() {
 }
 
 async function seedSuperAdminUser() {
-  console.log('👤 Creating default super admin user...');
   const superAdminUser = await prisma.user.upsert({
     where: { email: 'root@root.root' },
     update: {},
     create: {
       email: 'root@root.root',
-      password: await bcrypt.hash('password', 10), // Change this in production
+      password: await bcrypt.hash('password', 10),
       status: EUserStatus.ACTIVE,
     },
   });
 
-  // Assign super admin role to the user
   const superAdminRole = await prisma.role.findFirst({
     where: {
       name: 'Super Admin',
@@ -74,23 +70,16 @@ async function main() {
   await prisma.role.deleteMany({});
 
   const args = minimist(process.argv.slice(2));
-  // --all = semua, default juga semua jika tanpa argumen
-  // --role, --user
+
   const runAll = args.all || Object.keys(args).length === 1;
   if (runAll || args.role) await seedRoles();
   if (runAll || args.user) await seedSuperAdminUser();
-  console.log('✅ Database seeding completed!');
   if (runAll || args.user) {
-    console.log('📧 Default admin email: root@root.root');
-    console.log(
-      '🔑 Default admin password: password (change this in production!)',
-    );
   }
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {
