@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/_common/prisma/prisma.service';
 import { AiService } from 'src/_common/ai/ai.service';
 import { PricingRecommendationDto } from 'src/_common/dto/pricing/pricing-recommendation.dto';
@@ -6,22 +6,15 @@ import { Prisma } from 'src/generated/prisma/client';
 
 @Injectable()
 export class PricingService {
-  private readonly logger = new Logger(PricingService.name);
-
   constructor(
     private readonly prismaService: PrismaService,
     private readonly aiService: AiService,
   ) {}
 
-  /**
-   * Get pricing recommendations for items
-   * This is a simplified version - in production, this would integrate with AI models
-   */
   async getPricingRecommendations(
     userId?: string,
     targetMargin: number = 25,
   ): Promise<PricingRecommendationDto[]> {
-    // Get all items for the user
     const whereClause: Prisma.ItemWhereInput = {};
     if (userId) {
       whereClause.session = { userId };
@@ -37,7 +30,6 @@ export class PricingService {
       },
     });
 
-    // Group by item name and calculate averages
     const itemMap = new Map<
       string,
       { totalPrice: number; count: number; avgQty: number }
@@ -56,13 +48,11 @@ export class PricingService {
       });
     });
 
-    // Generate recommendations with AI
     const recommendationPromises = Array.from(itemMap.entries()).map(
       async ([itemName, data]) => {
         const avgPrice = data.totalPrice / data.count;
 
         try {
-          // Use AI for intelligent pricing recommendation
           const aiRecommendation =
             await this.aiService.generatePricingRecommendation(
               itemName,
@@ -83,13 +73,7 @@ export class PricingService {
             reasoning: aiRecommendation.reasoning,
             frequency: data.count,
           };
-        } catch (error) {
-          this.logger.error(
-            `AI pricing failed for ${itemName}, using fallback`,
-            error,
-          );
-
-          // Fallback to simple calculation if AI fails
+        } catch {
           const estimatedCost = avgPrice / (1 + 0.2);
           const recommendedPrice = estimatedCost * (1 + targetMargin / 100);
 
@@ -112,7 +96,6 @@ export class PricingService {
 
     const recommendations = await Promise.all(recommendationPromises);
 
-    // Sort by frequency (most sold items first)
     return recommendations.sort((a, b) => b.frequency - a.frequency);
   }
 
@@ -128,15 +111,16 @@ export class PricingService {
     if (Math.abs(percentChange) < 5) {
       return `Your current pricing is optimal for a ${targetMargin}% profit margin. Sold ${frequency} times.`;
     } else if (percentChange > 0) {
-      return `Consider increasing price by ${Math.round(percentChange)}% to achieve ${targetMargin}% margin. This item has been sold ${frequency} times, indicating good demand.`;
+      return `Consider increasing price by ${Math.round(
+        percentChange,
+      )}% to achieve ${targetMargin}% margin. This item has been sold ${frequency} times, indicating good demand.`;
     } else {
-      return `You can reduce price by ${Math.round(Math.abs(percentChange))}% while maintaining ${targetMargin}% margin, potentially increasing sales volume. Current sales: ${frequency} transactions.`;
+      return `You can reduce price by ${Math.round(
+        Math.abs(percentChange),
+      )}% while maintaining ${targetMargin}% margin, potentially increasing sales volume. Current sales: ${frequency} transactions.`;
     }
   }
 
-  /**
-   * Get pricing recommendation for a specific item
-   */
   async getItemPricingRecommendation(
     itemName: string,
     userId?: string,

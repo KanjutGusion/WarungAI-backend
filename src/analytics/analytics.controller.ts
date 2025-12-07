@@ -119,7 +119,6 @@ export class AnalyticsController {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
 
-    // Get sales data
     const salesSummary = await this.analyticsService.getSalesSummary(
       req.user?.id,
       start,
@@ -132,7 +131,6 @@ export class AnalyticsController {
       end,
     );
 
-    // Generate AI insights
     const insights = await this.aiService.generateMarketInsights(
       topItems,
       salesSummary,
@@ -168,7 +166,6 @@ export class AnalyticsController {
       exportAllData,
     );
 
-    // Transform to match export format
     const data = salesData.map((sale) => ({
       id: sale.id,
       created_at: sale.createdAt,
@@ -223,7 +220,6 @@ export class AnalyticsController {
       end,
     );
 
-    // Transform to match export format
     const data = salesData.map((sale) => ({
       id: sale.id,
       created_at: sale.createdAt,
@@ -279,7 +275,6 @@ export class AnalyticsController {
       end,
     );
 
-    // Transform to match export format
     const data = salesData.map((sale) => ({
       id: sale.id,
       created_at: sale.createdAt,

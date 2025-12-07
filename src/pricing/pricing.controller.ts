@@ -66,10 +66,12 @@ export class PricingController {
     @Query('target_margin') targetMargin?: string,
   ): Promise<PricingRecommendationDto | null> {
     const margin = targetMargin ? parseFloat(targetMargin) : 25;
-    return this.pricingService.getItemPricingRecommendation(
-      itemName,
-      req.user?.id,
-      margin,
-    );
+    const recommendation: PricingRecommendationDto | null =
+      await this.pricingService.getItemPricingRecommendation(
+        itemName,
+        req.user?.id,
+        margin,
+      );
+    return recommendation;
   }
 }
